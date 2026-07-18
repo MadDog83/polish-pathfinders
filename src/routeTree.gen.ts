@@ -11,7 +11,13 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PlIndexRouteImport } from './routes/pl/index'
+import { Route as NewsIndexRouteImport } from './routes/news/index'
 import { Route as EnIndexRouteImport } from './routes/en/index'
+import { Route as NewsSlugRouteImport } from './routes/news/$slug'
+import { Route as PlNewsIndexRouteImport } from './routes/pl/news/index'
+import { Route as EnNewsIndexRouteImport } from './routes/en/news/index'
+import { Route as PlNewsSlugRouteImport } from './routes/pl/news/$slug'
+import { Route as EnNewsSlugRouteImport } from './routes/en/news/$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -23,40 +29,122 @@ const PlIndexRoute = PlIndexRouteImport.update({
   path: '/pl/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NewsIndexRoute = NewsIndexRouteImport.update({
+  id: '/news/',
+  path: '/news/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EnIndexRoute = EnIndexRouteImport.update({
   id: '/en/',
   path: '/en/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NewsSlugRoute = NewsSlugRouteImport.update({
+  id: '/news/$slug',
+  path: '/news/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlNewsIndexRoute = PlNewsIndexRouteImport.update({
+  id: '/pl/news/',
+  path: '/pl/news/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnNewsIndexRoute = EnNewsIndexRouteImport.update({
+  id: '/en/news/',
+  path: '/en/news/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlNewsSlugRoute = PlNewsSlugRouteImport.update({
+  id: '/pl/news/$slug',
+  path: '/pl/news/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnNewsSlugRoute = EnNewsSlugRouteImport.update({
+  id: '/en/news/$slug',
+  path: '/en/news/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/news/$slug': typeof NewsSlugRoute
   '/en/': typeof EnIndexRoute
+  '/news/': typeof NewsIndexRoute
   '/pl/': typeof PlIndexRoute
+  '/en/news/$slug': typeof EnNewsSlugRoute
+  '/pl/news/$slug': typeof PlNewsSlugRoute
+  '/en/news/': typeof EnNewsIndexRoute
+  '/pl/news/': typeof PlNewsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/news/$slug': typeof NewsSlugRoute
   '/en': typeof EnIndexRoute
+  '/news': typeof NewsIndexRoute
   '/pl': typeof PlIndexRoute
+  '/en/news/$slug': typeof EnNewsSlugRoute
+  '/pl/news/$slug': typeof PlNewsSlugRoute
+  '/en/news': typeof EnNewsIndexRoute
+  '/pl/news': typeof PlNewsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/news/$slug': typeof NewsSlugRoute
   '/en/': typeof EnIndexRoute
+  '/news/': typeof NewsIndexRoute
   '/pl/': typeof PlIndexRoute
+  '/en/news/$slug': typeof EnNewsSlugRoute
+  '/pl/news/$slug': typeof PlNewsSlugRoute
+  '/en/news/': typeof EnNewsIndexRoute
+  '/pl/news/': typeof PlNewsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/en/' | '/pl/'
+  fullPaths:
+    | '/'
+    | '/news/$slug'
+    | '/en/'
+    | '/news/'
+    | '/pl/'
+    | '/en/news/$slug'
+    | '/pl/news/$slug'
+    | '/en/news/'
+    | '/pl/news/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/en' | '/pl'
-  id: '__root__' | '/' | '/en/' | '/pl/'
+  to:
+    | '/'
+    | '/news/$slug'
+    | '/en'
+    | '/news'
+    | '/pl'
+    | '/en/news/$slug'
+    | '/pl/news/$slug'
+    | '/en/news'
+    | '/pl/news'
+  id:
+    | '__root__'
+    | '/'
+    | '/news/$slug'
+    | '/en/'
+    | '/news/'
+    | '/pl/'
+    | '/en/news/$slug'
+    | '/pl/news/$slug'
+    | '/en/news/'
+    | '/pl/news/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  NewsSlugRoute: typeof NewsSlugRoute
   EnIndexRoute: typeof EnIndexRoute
+  NewsIndexRoute: typeof NewsIndexRoute
   PlIndexRoute: typeof PlIndexRoute
+  EnNewsSlugRoute: typeof EnNewsSlugRoute
+  PlNewsSlugRoute: typeof PlNewsSlugRoute
+  EnNewsIndexRoute: typeof EnNewsIndexRoute
+  PlNewsIndexRoute: typeof PlNewsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -75,6 +163,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/news/': {
+      id: '/news/'
+      path: '/news'
+      fullPath: '/news/'
+      preLoaderRoute: typeof NewsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/en/': {
       id: '/en/'
       path: '/en'
@@ -82,13 +177,54 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EnIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/news/$slug': {
+      id: '/news/$slug'
+      path: '/news/$slug'
+      fullPath: '/news/$slug'
+      preLoaderRoute: typeof NewsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pl/news/': {
+      id: '/pl/news/'
+      path: '/pl/news'
+      fullPath: '/pl/news/'
+      preLoaderRoute: typeof PlNewsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/en/news/': {
+      id: '/en/news/'
+      path: '/en/news'
+      fullPath: '/en/news/'
+      preLoaderRoute: typeof EnNewsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pl/news/$slug': {
+      id: '/pl/news/$slug'
+      path: '/pl/news/$slug'
+      fullPath: '/pl/news/$slug'
+      preLoaderRoute: typeof PlNewsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/en/news/$slug': {
+      id: '/en/news/$slug'
+      path: '/en/news/$slug'
+      fullPath: '/en/news/$slug'
+      preLoaderRoute: typeof EnNewsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  NewsSlugRoute: NewsSlugRoute,
   EnIndexRoute: EnIndexRoute,
+  NewsIndexRoute: NewsIndexRoute,
   PlIndexRoute: PlIndexRoute,
+  EnNewsSlugRoute: EnNewsSlugRoute,
+  PlNewsSlugRoute: PlNewsSlugRoute,
+  EnNewsIndexRoute: EnNewsIndexRoute,
+  PlNewsIndexRoute: PlNewsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

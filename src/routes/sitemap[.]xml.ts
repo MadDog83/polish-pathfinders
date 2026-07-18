@@ -6,7 +6,7 @@ const STATIC_PATHS = [
   "/pl", "/pl/news", "/pl/privacy", "/pl/terms",
 ];
 
-export const Route = createFileRoute("/sitemap[.]xml")({
+export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
       GET: async ({ request }) => {

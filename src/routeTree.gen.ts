@@ -9,38 +9,305 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PlIndexRouteImport } from './routes/pl/index'
+import { Route as NewsIndexRouteImport } from './routes/news/index'
+import { Route as EnIndexRouteImport } from './routes/en/index'
+import { Route as PlTermsRouteImport } from './routes/pl/terms'
+import { Route as PlPrivacyRouteImport } from './routes/pl/privacy'
+import { Route as NewsSlugRouteImport } from './routes/news/$slug'
+import { Route as EnTermsRouteImport } from './routes/en/terms'
+import { Route as EnPrivacyRouteImport } from './routes/en/privacy'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as PlNewsIndexRouteImport } from './routes/pl/news/index'
+import { Route as EnNewsIndexRouteImport } from './routes/en/news/index'
+import { Route as PlNewsSlugRouteImport } from './routes/pl/news/$slug'
+import { Route as EnNewsSlugRouteImport } from './routes/en/news/$slug'
 
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PlIndexRoute = PlIndexRouteImport.update({
+  id: '/pl/',
+  path: '/pl/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NewsIndexRoute = NewsIndexRouteImport.update({
+  id: '/news/',
+  path: '/news/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnIndexRoute = EnIndexRouteImport.update({
+  id: '/en/',
+  path: '/en/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlTermsRoute = PlTermsRouteImport.update({
+  id: '/pl/terms',
+  path: '/pl/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlPrivacyRoute = PlPrivacyRouteImport.update({
+  id: '/pl/privacy',
+  path: '/pl/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NewsSlugRoute = NewsSlugRouteImport.update({
+  id: '/news/$slug',
+  path: '/news/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnTermsRoute = EnTermsRouteImport.update({
+  id: '/en/terms',
+  path: '/en/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnPrivacyRoute = EnPrivacyRouteImport.update({
+  id: '/en/privacy',
+  path: '/en/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const PlNewsIndexRoute = PlNewsIndexRouteImport.update({
+  id: '/pl/news/',
+  path: '/pl/news/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnNewsIndexRoute = EnNewsIndexRouteImport.update({
+  id: '/en/news/',
+  path: '/en/news/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlNewsSlugRoute = PlNewsSlugRouteImport.update({
+  id: '/pl/news/$slug',
+  path: '/pl/news/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnNewsSlugRoute = EnNewsSlugRouteImport.update({
+  id: '/en/news/$slug',
+  path: '/en/news/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/privacy': typeof PrivacyRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/terms': typeof TermsRoute
+  '/admin': typeof AuthenticatedAdminRoute
+  '/en/privacy': typeof EnPrivacyRoute
+  '/en/terms': typeof EnTermsRoute
+  '/news/$slug': typeof NewsSlugRoute
+  '/pl/privacy': typeof PlPrivacyRoute
+  '/pl/terms': typeof PlTermsRoute
+  '/en/': typeof EnIndexRoute
+  '/news/': typeof NewsIndexRoute
+  '/pl/': typeof PlIndexRoute
+  '/en/news/$slug': typeof EnNewsSlugRoute
+  '/pl/news/$slug': typeof PlNewsSlugRoute
+  '/en/news/': typeof EnNewsIndexRoute
+  '/pl/news/': typeof PlNewsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/privacy': typeof PrivacyRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/terms': typeof TermsRoute
+  '/admin': typeof AuthenticatedAdminRoute
+  '/en/privacy': typeof EnPrivacyRoute
+  '/en/terms': typeof EnTermsRoute
+  '/news/$slug': typeof NewsSlugRoute
+  '/pl/privacy': typeof PlPrivacyRoute
+  '/pl/terms': typeof PlTermsRoute
+  '/en': typeof EnIndexRoute
+  '/news': typeof NewsIndexRoute
+  '/pl': typeof PlIndexRoute
+  '/en/news/$slug': typeof EnNewsSlugRoute
+  '/pl/news/$slug': typeof PlNewsSlugRoute
+  '/en/news': typeof EnNewsIndexRoute
+  '/pl/news': typeof PlNewsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/privacy': typeof PrivacyRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/terms': typeof TermsRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/en/privacy': typeof EnPrivacyRoute
+  '/en/terms': typeof EnTermsRoute
+  '/news/$slug': typeof NewsSlugRoute
+  '/pl/privacy': typeof PlPrivacyRoute
+  '/pl/terms': typeof PlTermsRoute
+  '/en/': typeof EnIndexRoute
+  '/news/': typeof NewsIndexRoute
+  '/pl/': typeof PlIndexRoute
+  '/en/news/$slug': typeof EnNewsSlugRoute
+  '/pl/news/$slug': typeof PlNewsSlugRoute
+  '/en/news/': typeof EnNewsIndexRoute
+  '/pl/news/': typeof PlNewsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/privacy'
+    | '/sitemap.xml'
+    | '/terms'
+    | '/admin'
+    | '/en/privacy'
+    | '/en/terms'
+    | '/news/$slug'
+    | '/pl/privacy'
+    | '/pl/terms'
+    | '/en/'
+    | '/news/'
+    | '/pl/'
+    | '/en/news/$slug'
+    | '/pl/news/$slug'
+    | '/en/news/'
+    | '/pl/news/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/privacy'
+    | '/sitemap.xml'
+    | '/terms'
+    | '/admin'
+    | '/en/privacy'
+    | '/en/terms'
+    | '/news/$slug'
+    | '/pl/privacy'
+    | '/pl/terms'
+    | '/en'
+    | '/news'
+    | '/pl'
+    | '/en/news/$slug'
+    | '/pl/news/$slug'
+    | '/en/news'
+    | '/pl/news'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/privacy'
+    | '/sitemap.xml'
+    | '/terms'
+    | '/_authenticated/admin'
+    | '/en/privacy'
+    | '/en/terms'
+    | '/news/$slug'
+    | '/pl/privacy'
+    | '/pl/terms'
+    | '/en/'
+    | '/news/'
+    | '/pl/'
+    | '/en/news/$slug'
+    | '/pl/news/$slug'
+    | '/en/news/'
+    | '/pl/news/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
+  PrivacyRoute: typeof PrivacyRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  TermsRoute: typeof TermsRoute
+  EnPrivacyRoute: typeof EnPrivacyRoute
+  EnTermsRoute: typeof EnTermsRoute
+  NewsSlugRoute: typeof NewsSlugRoute
+  PlPrivacyRoute: typeof PlPrivacyRoute
+  PlTermsRoute: typeof PlTermsRoute
+  EnIndexRoute: typeof EnIndexRoute
+  NewsIndexRoute: typeof NewsIndexRoute
+  PlIndexRoute: typeof PlIndexRoute
+  EnNewsSlugRoute: typeof EnNewsSlugRoute
+  PlNewsSlugRoute: typeof PlNewsSlugRoute
+  EnNewsIndexRoute: typeof EnNewsIndexRoute
+  PlNewsIndexRoute: typeof PlNewsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +315,131 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pl/': {
+      id: '/pl/'
+      path: '/pl'
+      fullPath: '/pl/'
+      preLoaderRoute: typeof PlIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/news/': {
+      id: '/news/'
+      path: '/news'
+      fullPath: '/news/'
+      preLoaderRoute: typeof NewsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/en/': {
+      id: '/en/'
+      path: '/en'
+      fullPath: '/en/'
+      preLoaderRoute: typeof EnIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pl/terms': {
+      id: '/pl/terms'
+      path: '/pl/terms'
+      fullPath: '/pl/terms'
+      preLoaderRoute: typeof PlTermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pl/privacy': {
+      id: '/pl/privacy'
+      path: '/pl/privacy'
+      fullPath: '/pl/privacy'
+      preLoaderRoute: typeof PlPrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/news/$slug': {
+      id: '/news/$slug'
+      path: '/news/$slug'
+      fullPath: '/news/$slug'
+      preLoaderRoute: typeof NewsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/en/terms': {
+      id: '/en/terms'
+      path: '/en/terms'
+      fullPath: '/en/terms'
+      preLoaderRoute: typeof EnTermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/en/privacy': {
+      id: '/en/privacy'
+      path: '/en/privacy'
+      fullPath: '/en/privacy'
+      preLoaderRoute: typeof EnPrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/pl/news/': {
+      id: '/pl/news/'
+      path: '/pl/news'
+      fullPath: '/pl/news/'
+      preLoaderRoute: typeof PlNewsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/en/news/': {
+      id: '/en/news/'
+      path: '/en/news'
+      fullPath: '/en/news/'
+      preLoaderRoute: typeof EnNewsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pl/news/$slug': {
+      id: '/pl/news/$slug'
+      path: '/pl/news/$slug'
+      fullPath: '/pl/news/$slug'
+      preLoaderRoute: typeof PlNewsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/en/news/$slug': {
+      id: '/en/news/$slug'
+      path: '/en/news/$slug'
+      fullPath: '/en/news/$slug'
+      preLoaderRoute: typeof EnNewsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
+  PrivacyRoute: PrivacyRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
+  TermsRoute: TermsRoute,
+  EnPrivacyRoute: EnPrivacyRoute,
+  EnTermsRoute: EnTermsRoute,
+  NewsSlugRoute: NewsSlugRoute,
+  PlPrivacyRoute: PlPrivacyRoute,
+  PlTermsRoute: PlTermsRoute,
+  EnIndexRoute: EnIndexRoute,
+  NewsIndexRoute: NewsIndexRoute,
+  PlIndexRoute: PlIndexRoute,
+  EnNewsSlugRoute: EnNewsSlugRoute,
+  PlNewsSlugRoute: PlNewsSlugRoute,
+  EnNewsIndexRoute: EnNewsIndexRoute,
+  PlNewsIndexRoute: PlNewsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

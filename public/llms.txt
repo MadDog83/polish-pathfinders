@@ -1,0 +1,27 @@
+# Smart Legalization Support
+
+Information and consultation service helping foreigners legalize their stay in Poland.
+
+## Languages
+Ukrainian (default at /), English (/en), Polish (/pl).
+
+## Topics covered
+- Temporary residence card (karta pobytu czasowego)
+- Permanent residence (pobyt stały)
+- Polish citizenship (obywatelstwo)
+- Work permits (zezwolenie na pracę)
+- CUKR for Ukrainian citizens (3-year permit under temporary protection)
+
+## Official sources referenced
+- gov.pl/web/udsc — Office for Foreigners
+- mos.cudzoziemcy.gov.pl — MOS application portal (mandatory since 27 April 2026)
+- inpol.mazowieckie.pl — case-tracking portal
+
+## Content pages
+- / — Ukrainian home with FAQ and services
+- /en — English home
+- /pl — Polish home
+- /news, /en/news, /pl/news — news and rule changes
+- /privacy, /terms — legal pages
+
+Not legal advice. Decisions in individual cases are made by the voivode and the Head of the Office for Foreigners.

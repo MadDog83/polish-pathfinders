@@ -9,16 +9,32 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PlIndexRouteImport } from './routes/pl/index'
 import { Route as NewsIndexRouteImport } from './routes/news/index'
 import { Route as EnIndexRouteImport } from './routes/en/index'
+import { Route as PlTermsRouteImport } from './routes/pl/terms'
+import { Route as PlPrivacyRouteImport } from './routes/pl/privacy'
 import { Route as NewsSlugRouteImport } from './routes/news/$slug'
+import { Route as EnTermsRouteImport } from './routes/en/terms'
+import { Route as EnPrivacyRouteImport } from './routes/en/privacy'
 import { Route as PlNewsIndexRouteImport } from './routes/pl/news/index'
 import { Route as EnNewsIndexRouteImport } from './routes/en/news/index'
 import { Route as PlNewsSlugRouteImport } from './routes/pl/news/$slug'
 import { Route as EnNewsSlugRouteImport } from './routes/en/news/$slug'
 
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -39,9 +55,29 @@ const EnIndexRoute = EnIndexRouteImport.update({
   path: '/en/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PlTermsRoute = PlTermsRouteImport.update({
+  id: '/pl/terms',
+  path: '/pl/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlPrivacyRoute = PlPrivacyRouteImport.update({
+  id: '/pl/privacy',
+  path: '/pl/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NewsSlugRoute = NewsSlugRouteImport.update({
   id: '/news/$slug',
   path: '/news/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnTermsRoute = EnTermsRouteImport.update({
+  id: '/en/terms',
+  path: '/en/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnPrivacyRoute = EnPrivacyRouteImport.update({
+  id: '/en/privacy',
+  path: '/en/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PlNewsIndexRoute = PlNewsIndexRouteImport.update({
@@ -67,7 +103,13 @@ const EnNewsSlugRoute = EnNewsSlugRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
+  '/en/privacy': typeof EnPrivacyRoute
+  '/en/terms': typeof EnTermsRoute
   '/news/$slug': typeof NewsSlugRoute
+  '/pl/privacy': typeof PlPrivacyRoute
+  '/pl/terms': typeof PlTermsRoute
   '/en/': typeof EnIndexRoute
   '/news/': typeof NewsIndexRoute
   '/pl/': typeof PlIndexRoute
@@ -78,7 +120,13 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
+  '/en/privacy': typeof EnPrivacyRoute
+  '/en/terms': typeof EnTermsRoute
   '/news/$slug': typeof NewsSlugRoute
+  '/pl/privacy': typeof PlPrivacyRoute
+  '/pl/terms': typeof PlTermsRoute
   '/en': typeof EnIndexRoute
   '/news': typeof NewsIndexRoute
   '/pl': typeof PlIndexRoute
@@ -90,7 +138,13 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
+  '/en/privacy': typeof EnPrivacyRoute
+  '/en/terms': typeof EnTermsRoute
   '/news/$slug': typeof NewsSlugRoute
+  '/pl/privacy': typeof PlPrivacyRoute
+  '/pl/terms': typeof PlTermsRoute
   '/en/': typeof EnIndexRoute
   '/news/': typeof NewsIndexRoute
   '/pl/': typeof PlIndexRoute
@@ -103,7 +157,13 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/privacy'
+    | '/terms'
+    | '/en/privacy'
+    | '/en/terms'
     | '/news/$slug'
+    | '/pl/privacy'
+    | '/pl/terms'
     | '/en/'
     | '/news/'
     | '/pl/'
@@ -114,7 +174,13 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/privacy'
+    | '/terms'
+    | '/en/privacy'
+    | '/en/terms'
     | '/news/$slug'
+    | '/pl/privacy'
+    | '/pl/terms'
     | '/en'
     | '/news'
     | '/pl'
@@ -125,7 +191,13 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/privacy'
+    | '/terms'
+    | '/en/privacy'
+    | '/en/terms'
     | '/news/$slug'
+    | '/pl/privacy'
+    | '/pl/terms'
     | '/en/'
     | '/news/'
     | '/pl/'
@@ -137,7 +209,13 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  PrivacyRoute: typeof PrivacyRoute
+  TermsRoute: typeof TermsRoute
+  EnPrivacyRoute: typeof EnPrivacyRoute
+  EnTermsRoute: typeof EnTermsRoute
   NewsSlugRoute: typeof NewsSlugRoute
+  PlPrivacyRoute: typeof PlPrivacyRoute
+  PlTermsRoute: typeof PlTermsRoute
   EnIndexRoute: typeof EnIndexRoute
   NewsIndexRoute: typeof NewsIndexRoute
   PlIndexRoute: typeof PlIndexRoute
@@ -149,6 +227,20 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -177,11 +269,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EnIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pl/terms': {
+      id: '/pl/terms'
+      path: '/pl/terms'
+      fullPath: '/pl/terms'
+      preLoaderRoute: typeof PlTermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pl/privacy': {
+      id: '/pl/privacy'
+      path: '/pl/privacy'
+      fullPath: '/pl/privacy'
+      preLoaderRoute: typeof PlPrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/news/$slug': {
       id: '/news/$slug'
       path: '/news/$slug'
       fullPath: '/news/$slug'
       preLoaderRoute: typeof NewsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/en/terms': {
+      id: '/en/terms'
+      path: '/en/terms'
+      fullPath: '/en/terms'
+      preLoaderRoute: typeof EnTermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/en/privacy': {
+      id: '/en/privacy'
+      path: '/en/privacy'
+      fullPath: '/en/privacy'
+      preLoaderRoute: typeof EnPrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pl/news/': {
@@ -217,7 +337,13 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  PrivacyRoute: PrivacyRoute,
+  TermsRoute: TermsRoute,
+  EnPrivacyRoute: EnPrivacyRoute,
+  EnTermsRoute: EnTermsRoute,
   NewsSlugRoute: NewsSlugRoute,
+  PlPrivacyRoute: PlPrivacyRoute,
+  PlTermsRoute: PlTermsRoute,
   EnIndexRoute: EnIndexRoute,
   NewsIndexRoute: NewsIndexRoute,
   PlIndexRoute: PlIndexRoute,

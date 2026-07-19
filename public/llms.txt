@@ -5,7 +5,9 @@
 Information and consultation service helping foreigners legalize their stay in Poland.
 
 ## Languages
-Ukrainian (default at /), English (/en), Polish (/pl).
+- [Ukrainian (default)](https://smart-legalization.lovable.app/)
+- [English](https://smart-legalization.lovable.app/en)
+- [Polish](https://smart-legalization.lovable.app/pl)
 
 ## Topics covered
 - Temporary residence card (karta pobytu czasowego)
@@ -14,16 +16,18 @@ Ukrainian (default at /), English (/en), Polish (/pl).
 - Work permits (zezwolenie na pracę)
 - CUKR for Ukrainian citizens (3-year permit under temporary protection)
 
-## Official sources referenced
-- gov.pl/web/udsc — Office for Foreigners
-- mos.cudzoziemcy.gov.pl — MOS application portal (mandatory since 27 April 2026)
-- inpol.mazowieckie.pl — case-tracking portal
-
 ## Content pages
-- / — Ukrainian home with FAQ and services
-- /en — English home
-- /pl — Polish home
-- /news, /en/news, /pl/news — news and rule changes
-- /privacy, /terms — legal pages
+- [Ukrainian home](https://smart-legalization.lovable.app/) — FAQ and services
+- [English home](https://smart-legalization.lovable.app/en)
+- [Polish home](https://smart-legalization.lovable.app/pl)
+- [News](https://smart-legalization.lovable.app/news) — news and rule changes
+- [Privacy policy](https://smart-legalization.lovable.app/privacy)
+- [Terms of use](https://smart-legalization.lovable.app/terms)
 
+## Official sources referenced
+- [Office for Foreigners (gov.pl/UDSC)](https://www.gov.pl/web/udsc)
+- [MOS application portal](https://mos.cudzoziemcy.gov.pl) — mandatory since 27 April 2026
+- [inPOL case-tracking portal](https://inpol.mazowieckie.pl)
+
+## Notes
 Not legal advice. Decisions in individual cases are made by the voivode and the Head of the Office for Foreigners.

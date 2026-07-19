@@ -209,7 +209,7 @@ const UA: Dict = {
   },
   faq: {
     heading: "Часті питання",
-    lead: "Стислі відповіді на найпоширеніші питання про легалізацію в Польщі. Кожна відповідь — 2–3 речення по суті, а нижче деталі.",
+    lead: "Стислі відповіді на найпоширеніші питання про легалізацію в Польщі.",
     items: [
       { q: "Скільки часу очікувати на карту побиту в Польщі?", a: "Законний термін видачі дозволу на тимчасове перебування — 60 днів від подання повного пакета документів, а друк карти займає потім близько 3–4 тижнів. На практиці, за формальних недоліків чи завантаженості установи, довше. Статус відстежуєте в порталі inPOL." },
       { q: "Скільки коштує карта тимчасового побиту?", a: "Гербовий збір за дозвіл на тимчасове перебування — 340 злотих (або 440 для деяких підстав, напр. перебування і праця), плюс 100 злотих за карту. Це два окремі платежі на окремі рахунки. Студенти, учні та діти до 16 років можуть мати пільгу — 50 злотих за карту." },
@@ -399,7 +399,7 @@ const EN: Dict = {
   },
   faq: {
     heading: "Frequently asked questions",
-    lead: "Concise answers to the most common questions about legalization in Poland. Each answer is 2–3 sentences up front, with detail beneath.",
+    lead: "Concise answers to the most common questions about legalization in Poland.",
     items: [
       { q: "How long does it take to get a residence card in Poland?", a: "The statutory deadline to issue a temporary residence permit is 60 days from filing a complete application, and printing the card afterwards takes about 3–4 weeks. In practice, formal gaps or a busy office extend this. You track your case in the inPOL portal." },
       { q: "How much does a temporary residence card cost?", a: "The stamp duty for a temporary residence permit is PLN 340 (or PLN 440 for some grounds, such as residence and work), plus PLN 100 for the card. These are two separate payments to separate accounts. Students, pupils and children under 16 may get a reduced PLN 50 card fee." },
@@ -589,7 +589,7 @@ const PL: Dict = {
   },
   faq: {
     heading: "Najczęstsze pytania",
-    lead: "Konkretne odpowiedzi na najczęstsze pytania o legalizację w Polsce. Każda odpowiedź to 2–3 zdania na start, ze szczegółami poniżej.",
+    lead: "Konkretne odpowiedzi na najczęstsze pytania o legalizację w Polsce.",
     items: [
       { q: "Ile czeka się na kartę pobytu w Polsce?", a: "Ustawowy termin na wydanie zezwolenia na pobyt czasowy to 60 dni od złożenia kompletnego wniosku, a sam druk karty zajmuje potem około 3–4 tygodnie. W praktyce, przy brakach formalnych lub dużym obłożeniu urzędu, trwa dłużej. Status śledzisz w portalu inPOL." },
       { q: "Ile kosztuje karta pobytu czasowego?", a: "Opłata skarbowa za zezwolenie na pobyt czasowy wynosi 340 zł (lub 440 zł dla niektórych podstaw, np. pobyt i praca), plus 100 zł za wydanie karty. To dwie osobne opłaty na osobne konta. Studenci, uczniowie i dzieci do 16 lat mogą mieć ulgę 50 zł za kartę." },

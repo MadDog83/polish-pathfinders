@@ -3,4 +3,23 @@ Allow: /
 Disallow: /admin
 Disallow: /auth
 Disallow: /_authenticated
-Sitemap: /sitemap.xml
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+Sitemap: https://smart-legalization.lovable.app/sitemap.xml

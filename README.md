@@ -1,6 +1,25 @@
-# Smart Legalization Support
+<p align="center">
+  <img src="./public/polish-pathfinders-logo.svg" alt="Polish Pathfinders" width="480">
+</p>
 
-A multilingual web app helping newcomers find their way in Poland. Built with TanStack Start, React 19, and Supabase.
+<p align="center">
+  <strong>Pomoc w legalizacji pobytu w Polsce</strong><br>
+  Wielojęzyczna aplikacja webowa (UA · EN · PL) wspierająca osoby w formalnościach pobytowych.
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/TanStack_Start-EF4444?logo=react&logoColor=white" alt="TanStack Start">
+  <img src="https://img.shields.io/badge/React_19-149ECA?logo=react&logoColor=white" alt="React 19">
+  <img src="https://img.shields.io/badge/Supabase-3ECF8E?logo=supabase&logoColor=white" alt="Supabase">
+  <img src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white" alt="TypeScript">
+  <img src="https://img.shields.io/badge/Tailwind_CSS_v4-06B6D4?logo=tailwindcss&logoColor=white" alt="Tailwind CSS">
+</p>
+
+---
+
+# Polish Pathfinders — Smart Legalization Support
+
+A multilingual web app helping newcomers navigate residence-permit and legalization procedures in Poland. Built with TanStack Start, React 19, and Supabase.
 
 ## Features
 

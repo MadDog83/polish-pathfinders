@@ -1,5 +1,6 @@
 // Central i18n. UA is default. Business name kept in English across all locales.
 export const SITE_NAME = "Smart Legalization Support";
+export const SITE_URL = "https://smart-legalization.lovable.app";
 export const CURRENCY_DATE = "November 2026";
 export const TELEGRAM_URL = "https://t.me/legalize_auto_bot";
 export const CONTACT_EMAIL = "kontakt@smartlegalization.pl";

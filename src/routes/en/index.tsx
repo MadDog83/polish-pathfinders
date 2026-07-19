@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { HomePage } from "@/components/home-page";
-import { getDict } from "@/i18n";
+import { getDict, SITE_URL } from "@/i18n";
 
 const t = getDict("en");
 
@@ -13,13 +13,14 @@ export const Route = createFileRoute("/en/")({
       { property: "og:description", content: t.meta.homeDescription },
       { property: "og:locale", content: "en_US" },
     ],
-    links: [
-      { rel: "canonical", href: "/en" },
-      { rel: "alternate", hrefLang: "uk", href: "/" },
-      { rel: "alternate", hrefLang: "en", href: "/en" },
-      { rel: "alternate", hrefLang: "pl", href: "/pl" },
-      { rel: "alternate", hrefLang: "x-default", href: "/" },
+        links: [
+      { rel: "canonical", href: `${SITE_URL}/en` },
+      { rel: "alternate", hrefLang: "uk", href: `${SITE_URL}/` },
+      { rel: "alternate", hrefLang: "en", href: `${SITE_URL}/en` },
+      { rel: "alternate", hrefLang: "pl", href: `${SITE_URL}/pl` },
+      { rel: "alternate", hrefLang: "x-default", href: `${SITE_URL}/` },
     ],
+
   }),
   component: () => <HomePage locale="en" />,
 });

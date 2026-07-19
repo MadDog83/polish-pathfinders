@@ -1,5 +1,7 @@
 # Smart Legalization Support
 
+> Multilingual (Ukrainian, English, Polish) information service on Polish legalization: residence cards, permanent residence, citizenship, work permits, and CUKR — with official-source links and current 2026 rules.
+
 Information and consultation service helping foreigners legalize their stay in Poland.
 
 ## Languages

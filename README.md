@@ -1,4 +1,4 @@
-# Polish Pathfinders
+# Smart Legalization Support
 
 A multilingual web app helping newcomers find their way in Poland. Built with TanStack Start, React 19, and Supabase.
 

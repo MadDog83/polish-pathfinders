@@ -243,7 +243,7 @@ const UA: Dict = {
   currencyNote: "Завжди перевіряйте на gov.pl.",
   footer: {
     tagline: "Легалізація в Польщі — зрозуміло та актуально.",
-    rights: `© ${new Date().getFullYear()} ${SITE_NAME}. Усі права захищено.`,
+    rights: `© 2026 ${SITE_NAME}. Усі права захищено.`,
     legal: "Правова інформація",
     privacy: "Політика конфіденційності",
     terms: "Умови користування",
@@ -429,7 +429,7 @@ const EN: Dict = {
   currencyNote: "Always verify on gov.pl.",
   footer: {
     tagline: "Legalization in Poland — clearly and up to date.",
-    rights: `© ${new Date().getFullYear()} ${SITE_NAME}. All rights reserved.`,
+    rights: `© 2026 ${SITE_NAME}. All rights reserved.`,
     legal: "Legal",
     privacy: "Privacy policy",
     terms: "Terms of use",
@@ -615,7 +615,7 @@ const PL: Dict = {
   currencyNote: "Zawsze weryfikuj na gov.pl.",
   footer: {
     tagline: "Legalizacja w Polsce — jasno i aktualnie.",
-    rights: `© ${new Date().getFullYear()} ${SITE_NAME}. Wszelkie prawa zastrzeżone.`,
+    rights: `© 2026 ${SITE_NAME}. Wszelkie prawa zastrzeżone.`,
     legal: "Informacje prawne",
     privacy: "Polityka prywatności",
     terms: "Warunki użytkowania",

@@ -243,7 +243,7 @@ const UA: Dict = {
     ],
     refs: "Офіційні джерела: gov.pl/web/udsc, mos.cudzoziemcy.gov.pl, inpol.mazowieckie.pl",
   },
-  currencyNote: `Загальна інформація, актуально станом на ${CURRENCY_DATE}. Завжди перевіряйте на gov.pl.`,
+  currencyNote: "Завжди перевіряйте на gov.pl.",
   footer: {
     tagline: "Легалізація в Польщі — зрозуміло та актуально.",
     rights: `© ${new Date().getFullYear()} ${SITE_NAME}. Усі права захищено.`,
@@ -433,7 +433,7 @@ const EN: Dict = {
     ],
     refs: "Official sources: gov.pl/web/udsc, mos.cudzoziemcy.gov.pl, inpol.mazowieckie.pl",
   },
-  currencyNote: `General information, current as of ${CURRENCY_DATE}. Always verify on gov.pl.`,
+  currencyNote: "Always verify on gov.pl.",
   footer: {
     tagline: "Legalization in Poland — clearly and up to date.",
     rights: `© ${new Date().getFullYear()} ${SITE_NAME}. All rights reserved.`,
@@ -623,7 +623,7 @@ const PL: Dict = {
     ],
     refs: "Oficjalne źródła: gov.pl/web/udsc, mos.cudzoziemcy.gov.pl, inpol.mazowieckie.pl",
   },
-  currencyNote: `Informacje ogólne, aktualne na ${CURRENCY_DATE}. Zawsze weryfikuj na gov.pl.`,
+  currencyNote: "Zawsze weryfikuj na gov.pl.",
   footer: {
     tagline: "Legalizacja w Polsce — jasno i aktualnie.",
     rights: `© ${new Date().getFullYear()} ${SITE_NAME}. Wszelkie prawa zastrzeżone.`,

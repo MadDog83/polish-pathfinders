@@ -185,7 +185,6 @@ const UA: Dict = {
     ctaPrimary: "Задати питання боту",
     ctaSecondary: "Читати відповіді",
     bullets: [
-      "Актуально до листопада 2026",
       "Українська, англійська, польська",
       "Посилання на gov.pl, MOS та inPOL",
     ],
@@ -375,7 +374,6 @@ const EN: Dict = {
     ctaPrimary: "Ask the assistant",
     ctaSecondary: "Read the answers",
     bullets: [
-      `Current as of ${CURRENCY_DATE}`,
       "Ukrainian, English, Polish",
       "Links to gov.pl, MOS and inPOL",
     ],
@@ -565,7 +563,6 @@ const PL: Dict = {
     ctaPrimary: "Zapytaj asystenta",
     ctaSecondary: "Przeczytaj odpowiedzi",
     bullets: [
-      `Aktualne na ${CURRENCY_DATE}`,
       "Ukraiński, angielski, polski",
       "Linki do gov.pl, MOS i inPOL",
     ],

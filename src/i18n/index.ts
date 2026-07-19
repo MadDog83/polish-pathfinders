@@ -181,13 +181,10 @@ const UA: Dict = {
   hero: {
     eyebrow: "Легалізація в Польщі",
     h1: `${SITE_NAME} — легалізація в Польщі без здогадок`,
-    lead: "Карти побиту, постійне перебування, громадянство та дозволи на роботу. Актуальна інформація, посилання на офіційні джерела та рішення крок за кроком — трьома мовами.",
+    lead: "Карти побиту, постійне перебування, громадянство та дозволи на роботу.",
     ctaPrimary: "Задати питання боту",
     ctaSecondary: "Читати відповіді",
-    bullets: [
-      "Українська, англійська, польська",
-      "Посилання на gov.pl, MOS та inPOL",
-    ],
+    bullets: [],
   },
   services: {
     heading: "Що ми охоплюємо",
@@ -370,13 +367,10 @@ const EN: Dict = {
   hero: {
     eyebrow: "Legalization in Poland",
     h1: `${SITE_NAME} — Poland residence, PR & citizenship without guesswork`,
-    lead: "Temporary and permanent residence cards, Polish citizenship, work permits and CUKR. Up-to-date guidance with references to gov.pl, MOS and inPOL — in three languages.",
+    lead: "Temporary and permanent residence cards, Polish citizenship, work permits and CUKR.",
     ctaPrimary: "Ask the assistant",
     ctaSecondary: "Read the answers",
-    bullets: [
-      "Ukrainian, English, Polish",
-      "Links to gov.pl, MOS and inPOL",
-    ],
+    bullets: [],
   },
   services: {
     heading: "What we cover",
@@ -559,13 +553,10 @@ const PL: Dict = {
   hero: {
     eyebrow: "Legalizacja w Polsce",
     h1: `${SITE_NAME} — legalizacja w Polsce bez zgadywania`,
-    lead: "Karta pobytu, pobyt stały, obywatelstwo i zezwolenia na pracę. Aktualne informacje z odnośnikami do gov.pl, MOS oraz inPOL — w trzech językach.",
+    lead: "Karta pobytu, pobyt stały, obywatelstwo i zezwolenia na pracę.",
     ctaPrimary: "Zapytaj asystenta",
     ctaSecondary: "Przeczytaj odpowiedzi",
-    bullets: [
-      "Ukraiński, angielski, polski",
-      "Linki do gov.pl, MOS i inPOL",
-    ],
+    bullets: [],
   },
   services: {
     heading: "Co obejmujemy",

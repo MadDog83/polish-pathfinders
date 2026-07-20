@@ -52,13 +52,10 @@ export const getNewsBySlug = createServerFn({ method: "GET" })
 export const isAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
-    if (error) throw new Error(error.message);
-    return { admin: data === true };
+    const admin = await checkIsAdmin(context.supabase, context.userId);
+    return { admin };
   });
+
 
 export const adminListLeads = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

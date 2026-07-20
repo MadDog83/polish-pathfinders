@@ -60,11 +60,7 @@ export const isAdmin = createServerFn({ method: "GET" })
 export const adminListLeads = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data: role } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
-    if (role !== true) throw new Error("Forbidden");
+    if (!(await checkIsAdmin(context.supabase, context.userId))) throw new Error("Forbidden");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
       .from("leads")
@@ -78,11 +74,7 @@ export const adminListLeads = createServerFn({ method: "GET" })
 export const adminListNews = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data: role } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
-    if (role !== true) throw new Error("Forbidden");
+    if (!(await checkIsAdmin(context.supabase, context.userId))) throw new Error("Forbidden");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
       .from("news")
@@ -109,11 +101,7 @@ export const adminSaveNews = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => NewsInputSchema.parse(data))
   .handler(async ({ context, data }) => {
-    const { data: role } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
-    if (role !== true) throw new Error("Forbidden");
+    if (!(await checkIsAdmin(context.supabase, context.userId))) throw new Error("Forbidden");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const payload = {
       slug: data.slug,
@@ -144,11 +132,7 @@ export const adminDeleteNews = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ id: z.string().uuid() }).parse(data))
   .handler(async ({ context, data }) => {
-    const { data: role } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
-    if (role !== true) throw new Error("Forbidden");
+    if (!(await checkIsAdmin(context.supabase, context.userId))) throw new Error("Forbidden");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("news").delete().eq("id", data.id);
     if (error) throw new Error(error.message);

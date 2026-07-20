@@ -16,9 +16,6 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
-  // Disable Nitro so the build produces a standard static Vite bundle (dist/index.html)
-  // suitable for GitHub Pages static hosting. Server functions will not run on GitHub Pages.
-  nitro: false,
   vite: {
     base: GITHUB_PAGES_BASE,
     build: {

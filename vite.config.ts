@@ -6,21 +6,10 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
-// GitHub Pages project-site base path. If your repository name differs from "smart-legalization",
-// update both the Vite `base` value here and the `basepath` value in `src/router.tsx`.
-const GITHUB_PAGES_BASE = "/smart-legalization/";
-
 export default defineConfig({
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
-  },
-  vite: {
-    base: GITHUB_PAGES_BASE,
-    build: {
-      // Standard Vite build output directory for GitHub Pages static deployment.
-      outDir: "dist",
-    },
   },
 });

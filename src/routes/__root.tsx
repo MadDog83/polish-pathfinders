@@ -85,21 +85,21 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "description",
         content:
-          "Legalizacja w Polsce dla cudzoziemców: karta pobytu, pobyt stały, obywatelstwo, CUKR. Aktualne informacje po polsku, angielsku i ukraińsku.",
+          "Residence legalization in Poland for foreigners — clear and up to date.",
       },
       { name: "author", content: SITE_NAME },
       { property: "og:title", content: `${SITE_NAME} — Legalizacja w Polsce` },
       {
         property: "og:description",
         content:
-          "Legalizacja w Polsce dla cudzoziemców: karta pobytu, pobyt stały, obywatelstwo, CUKR. Aktualne informacje po polsku, angielsku i ukraińsku.",
+          "Residence legalization in Poland for foreigners — clear and up to date.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { title: "Smart Legalization Support — legalizacja w Polsce" },
       { property: "og:title", content: "Smart Legalization Support — legalizacja w Polsce" },
       { name: "twitter:title", content: "Smart Legalization Support — legalizacja w Polsce" },
-      { name: "twitter:description", content: "Legalizacja w Polsce dla cudzoziemców: karta pobytu, pobyt stały, obywatelstwo, CUKR. Aktualne informacje po polsku, angielsku i ukraińsku." },
+      { name: "twitter:description", content: "Residence legalization in Poland for foreigners — clear and up to date." },
       { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8bfef38c-34ab-487c-989b-8a8f10d1836a/id-preview-fbf9642f--a5b9e8a7-461e-45fb-b630-c3934b13bccd.lovable.app-1784455505441.png" },
       { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8bfef38c-34ab-487c-989b-8a8f10d1836a/id-preview-fbf9642f--a5b9e8a7-461e-45fb-b630-c3934b13bccd.lovable.app-1784455505441.png" },
     ],
@@ -111,6 +111,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: "https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=1200&q=70",
         fetchpriority: "high",
       },
+      { rel: "icon", type: "image/x-icon", href: "/favicon.ico" },
     ],
     scripts: [
       { children: THEME_INIT_SCRIPT },

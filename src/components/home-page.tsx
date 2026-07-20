@@ -52,27 +52,43 @@ export function HomePage({ locale }: { locale: Locale }) {
           aria-hidden
           className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(60%_60%_at_50%_0%,hsl(var(--primary)/0.10),transparent)]"
         />
-        <div className="mx-auto max-w-6xl px-4 py-16 md:py-24">
-          <Badge variant="secondary" className="mb-4">{t.hero.eyebrow}</Badge>
-          <h1 className="max-w-3xl text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
-            {t.hero.h1}
-          </h1>
-          <p className="mt-4 max-w-2xl text-base text-muted-foreground md:text-lg">{t.hero.lead}</p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Button asChild size="lg">
-              <a href="#faq">{t.hero.ctaSecondary}<ArrowRight className="ml-1 h-4 w-4" /></a>
-            </Button>
-            <Button asChild size="lg" variant="outline">
-              <a href="#services">{t.services.heading}</a>
-            </Button>
+        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-16 md:grid-cols-2 md:items-center md:py-24">
+          <div>
+            <Badge variant="secondary" className="mb-4">{t.hero.eyebrow}</Badge>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
+              {t.hero.h1}
+            </h1>
+            <p className="mt-4 max-w-xl text-base text-muted-foreground md:text-lg">{t.hero.lead}</p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Button asChild size="lg">
+                <a href="#faq">{t.hero.ctaSecondary}<ArrowRight className="ml-1 h-4 w-4" /></a>
+              </Button>
+              <Button asChild size="lg" variant="outline">
+                <a href="#services">{t.services.heading}</a>
+              </Button>
+            </div>
+            {t.hero.bullets.length > 0 && (
+              <ul className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
+                {t.hero.bullets.map((b) => (
+                  <li key={b} className="flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5 text-accent" />{b}</li>
+                ))}
+              </ul>
+            )}
           </div>
-          <ul className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
-            {t.hero.bullets.map((b) => (
-              <li key={b} className="flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5 text-accent" />{b}</li>
-            ))}
-          </ul>
+          <div className="relative">
+            <img
+              src="https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=1200&q=70"
+              alt="Professional legal consultation"
+              width={1200}
+              height={800}
+              fetchPriority="high"
+              decoding="async"
+              className="aspect-[3/2] w-full rounded-xl border border-border/60 object-cover shadow-sm"
+            />
+          </div>
         </div>
       </section>
+
 
       {/* Services */}
       <section id="services" className="mx-auto max-w-6xl px-4 py-16">

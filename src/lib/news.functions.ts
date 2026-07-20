@@ -1,8 +1,21 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const LocaleSchema = z.enum(["uk", "en", "pl"]);
+
+async function checkIsAdmin(supabase: SupabaseClient, userId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .eq("role", "admin")
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return !!data;
+}
+
 
 export const listNewsPublic = createServerFn({ method: "GET" })
   .inputValidator((data) => z.object({ language: LocaleSchema, limit: z.number().min(1).max(50).optional() }).parse(data))

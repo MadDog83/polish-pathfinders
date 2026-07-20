@@ -1,8 +1,21 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const LocaleSchema = z.enum(["uk", "en", "pl"]);
+
+async function checkIsAdmin(supabase: SupabaseClient, userId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .eq("role", "admin")
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return !!data;
+}
+
 
 export const listNewsPublic = createServerFn({ method: "GET" })
   .inputValidator((data) => z.object({ language: LocaleSchema, limit: z.number().min(1).max(50).optional() }).parse(data))
@@ -39,22 +52,15 @@ export const getNewsBySlug = createServerFn({ method: "GET" })
 export const isAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
-    if (error) throw new Error(error.message);
-    return { admin: data === true };
+    const admin = await checkIsAdmin(context.supabase, context.userId);
+    return { admin };
   });
+
 
 export const adminListLeads = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data: role } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
-    if (role !== true) throw new Error("Forbidden");
+    if (!(await checkIsAdmin(context.supabase, context.userId))) throw new Error("Forbidden");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
       .from("leads")
@@ -68,11 +74,7 @@ export const adminListLeads = createServerFn({ method: "GET" })
 export const adminListNews = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data: role } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
-    if (role !== true) throw new Error("Forbidden");
+    if (!(await checkIsAdmin(context.supabase, context.userId))) throw new Error("Forbidden");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
       .from("news")
@@ -99,11 +101,7 @@ export const adminSaveNews = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => NewsInputSchema.parse(data))
   .handler(async ({ context, data }) => {
-    const { data: role } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
-    if (role !== true) throw new Error("Forbidden");
+    if (!(await checkIsAdmin(context.supabase, context.userId))) throw new Error("Forbidden");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const payload = {
       slug: data.slug,
@@ -134,11 +132,7 @@ export const adminDeleteNews = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ id: z.string().uuid() }).parse(data))
   .handler(async ({ context, data }) => {
-    const { data: role } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
-    if (role !== true) throw new Error("Forbidden");
+    if (!(await checkIsAdmin(context.supabase, context.userId))) throw new Error("Forbidden");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("news").delete().eq("id", data.id);
     if (error) throw new Error(error.message);

@@ -3,8 +3,8 @@
 </p>
 
 <p align="center">
-  <strong>Pomoc w legalizacji pobytu w Polsce</strong><br>
-  Wielojęzyczna aplikacja webowa (UA · EN · PL) wspierająca osoby w formalnościach pobytowych.
+  <strong>Residence legalization support in Poland</strong><br>
+  A multilingual web app (UA · EN · PL) guiding newcomers through residence procedures.
 </p>
 
 <p align="center">
@@ -66,7 +66,7 @@ Create a `.env` file with your Supabase credentials:
 
 ```
 VITE_SUPABASE_URL=your-supabase-url
-VITE_SUPABASE_ANON_KEY=your-anon-key
+VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 ```
 
 ## Scripts

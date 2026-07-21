@@ -13,6 +13,9 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowRight, FileText, Home as HomeIcon, ShieldCheck, UserCheck, Sparkles, ExternalLink } from "lucide-react";
 import { SITE_NAME, getDict, localePath, type Locale } from "@/i18n";
 import { listNewsPublic } from "@/lib/news.functions";
+import hero480 from "@/assets/hero-consult-480.webp?url";
+import hero800 from "@/assets/hero-consult-800.webp?url";
+import hero1200 from "@/assets/hero-consult-1200.webp?url";
 
 const ICONS = [FileText, HomeIcon, ShieldCheck, UserCheck];
 

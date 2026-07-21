@@ -105,12 +105,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      {
-        rel: "preload",
-        as: "image",
-        href: "https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=1200&q=70",
-        fetchpriority: "high",
-      },
       { rel: "icon", type: "image/x-icon", href: "/favicon.ico" },
     ],
     scripts: [

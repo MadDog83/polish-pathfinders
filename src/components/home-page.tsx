@@ -13,6 +13,9 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowRight, FileText, Home as HomeIcon, ShieldCheck, UserCheck, Sparkles, ExternalLink } from "lucide-react";
 import { SITE_NAME, getDict, localePath, type Locale } from "@/i18n";
 import { listNewsPublic } from "@/lib/news.functions";
+import hero480 from "@/assets/hero-consult-480.webp?url";
+import hero800 from "@/assets/hero-consult-800.webp?url";
+import hero1200 from "@/assets/hero-consult-1200.webp?url";
 
 const ICONS = [FileText, HomeIcon, ShieldCheck, UserCheck];
 
@@ -77,10 +80,12 @@ export function HomePage({ locale }: { locale: Locale }) {
           </div>
           <div className="relative">
             <img
-              src="https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=1200&q=70"
+              src={hero800}
+              srcSet={`${hero480} 480w, ${hero800} 800w, ${hero1200} 1200w`}
+              sizes="(min-width: 768px) 560px, 100vw"
               alt="Professional legal consultation"
-              width={1200}
-              height={800}
+              width={800}
+              height={533}
               fetchPriority="high"
               decoding="async"
               className="aspect-[3/2] w-full rounded-xl border border-border/60 object-cover shadow-sm"

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { HomePage } from "@/components/home-page";
 import { getDict, SITE_URL } from "@/i18n";
+import hero1200 from "@/assets/hero-consult-1200.webp?url";
 
 const t = getDict("en");
 

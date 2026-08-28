@@ -15,6 +15,7 @@ import { useLocale } from "@/lib/use-locale";
 import { getDict, TELEGRAM_URL, CONTACT_EMAIL, CONTACT_PHONE } from "@/i18n";
 import { matchFaq } from "@/components/chat/kb";
 import { submitLead } from "@/lib/leads.functions";
+import { askAssistant } from "@/lib/chat.functions";
 
 type Msg =
   | { role: "bot"; kind: "text"; text: string }
@@ -41,34 +42,41 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
   const [input, setInput] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [revealed, setRevealed] = useState(false);
+  const [thinking, setThinking] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const historyRef = useRef<{ role: "user" | "assistant"; content: string }[]>([]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, showForm, revealed]);
+  }, [messages, showForm, revealed, thinking]);
 
-  const send = () => {
+  const send = async () => {
     const text = input.trim();
-    if (!text) return;
+    if (!text || thinking) return;
     setInput("");
     setMessages((m) => [...m, { role: "user", kind: "text", text }]);
-    const idx = matchFaq(locale, text);
-    setTimeout(() => {
-      if (idx !== null) {
-        const item = getDict(locale).faq.items[idx];
-        setMessages((m) => [
-          ...m,
-          { role: "bot", kind: "text", text: item.a },
-          { role: "bot", kind: "links" },
-        ]);
-      } else {
-        setMessages((m) => [
-          ...m,
-          { role: "bot", kind: "text", text: t.noMatch },
-          { role: "bot", kind: "links" },
-        ]);
-      }
-    }, 250);
+    historyRef.current = [...historyRef.current, { role: "user" as const, content: text }].slice(-12);
+    setThinking(true);
+    try {
+      const res = await askAssistant({ data: { messages: historyRef.current } });
+      historyRef.current = [...historyRef.current, { role: "assistant" as const, content: res.text }].slice(-12);
+      setMessages((m) => [
+        ...m,
+        { role: "bot", kind: "text", text: res.text },
+        { role: "bot", kind: "links" },
+      ]);
+    } catch (err) {
+      console.error(err);
+      const idx = matchFaq(locale, text);
+      const fallback = idx !== null ? getDict(locale).faq.items[idx].a : t.noMatch;
+      setMessages((m) => [
+        ...m,
+        { role: "bot", kind: "text", text: fallback },
+        { role: "bot", kind: "links" },
+      ]);
+    } finally {
+      setThinking(false);
+    }
   };
 
   if (!open) return null;
@@ -104,6 +112,18 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
           />
         )}
         {revealed && <ContactReveal />}
+        {thinking && (
+          <div className="flex gap-2" aria-live="polite">
+            <div className="mt-0.5 grid h-6 w-6 place-items-center rounded-full bg-accent text-accent-foreground">
+              <Bot className="h-3.5 w-3.5" />
+            </div>
+            <div className="flex items-center gap-1 rounded-lg rounded-tl-sm bg-muted px-3 py-2.5">
+              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:0ms]" />
+              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:150ms]" />
+              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:300ms]" />
+            </div>
+          </div>
+        )}
       </div>
 
       {!showForm && !revealed && (
@@ -131,8 +151,9 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
               onChange={(e) => setInput(e.target.value)}
               placeholder={t.placeholder}
               aria-label={t.placeholder}
+              disabled={thinking}
             />
-            <Button type="submit" size="icon" aria-label={t.send}>
+            <Button type="submit" size="icon" aria-label={t.send} disabled={thinking}>
               <Send className="h-4 w-4" />
             </Button>
           </form>

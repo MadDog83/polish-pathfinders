@@ -91,6 +91,9 @@ export interface Dict {
     endChatConfirm: string;
     confirmYes: string;
     confirmNo: string;
+    minimize: string;
+    expand: string;
+    dragHint: string;
     formHeading: string;
     formLead: string;
     name: string;

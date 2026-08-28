@@ -130,10 +130,6 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
       }`}
     >
       <div
-        onPointerDown={onDragStart}
-        onPointerMove={onDragMove}
-        onPointerUp={onDragEnd}
-        onPointerCancel={onDragEnd}
         title={t.dragHint}
         className="flex touch-none items-center justify-between gap-2 border-b border-border bg-primary px-4 py-3 text-primary-foreground select-none cursor-grab active:cursor-grabbing"
       >

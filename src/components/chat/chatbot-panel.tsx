@@ -182,6 +182,8 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
         {showForm && !revealed && (
           <LeadForm
             onDone={() => setRevealed(true)}
+            onBack={() => setShowForm(false)}
+            onClose={() => onOpenChange(false)}
             initialService=""
           />
         )}

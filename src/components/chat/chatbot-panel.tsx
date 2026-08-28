@@ -46,6 +46,10 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [minimized, setMinimized] = useState(false);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const isMobile = useIsMobile();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const mobile = mounted ? isMobile : typeof window !== "undefined" ? window.innerWidth < 768 : false;
   const dragRef = useRef<{ startX: number; startY: number; baseX: number; baseY: number } | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);

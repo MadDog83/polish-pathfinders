@@ -14,6 +14,7 @@ export const Route = createFileRoute("/")({
       { property: "og:description", content: t.meta.homeDescription },
       { property: "og:locale", content: "uk_UA" },
       { property: "og:image", content: `${SITE_URL}${hero1200}` },
+      { name: "twitter:description", content: t.meta.homeDescription },
       { name: "twitter:image", content: `${SITE_URL}${hero1200}` },
     ],
     links: [

@@ -15,6 +15,7 @@ import { useLocale } from "@/lib/use-locale";
 import { getDict, TELEGRAM_URL, CONTACT_EMAIL, CONTACT_PHONE } from "@/i18n";
 import { matchFaq } from "@/components/chat/kb";
 import { submitLead } from "@/lib/leads.functions";
+import { askAssistant } from "@/lib/chat.functions";
 
 type Msg =
   | { role: "bot"; kind: "text"; text: string }

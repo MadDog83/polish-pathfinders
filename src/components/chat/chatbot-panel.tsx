@@ -325,7 +325,7 @@ function MessageBubble({ m, t }: { m: Msg; t: ReturnType<typeof getDict>["chatbo
   );
 }
 
-function LeadForm({ onDone, initialService }: { onDone: () => void; initialService: string }) {
+function LeadForm({ onDone, onBack, onClose, initialService }: { onDone: () => void; onBack: () => void; onClose: () => void; initialService: string }) {
   const locale = useLocale();
   const t = getDict(locale).chatbot;
   const [name, setName] = useState("");

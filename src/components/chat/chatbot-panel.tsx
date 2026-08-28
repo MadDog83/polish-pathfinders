@@ -19,6 +19,7 @@ import { askAssistant } from "@/lib/chat.functions";
 
 type Msg =
   | { role: "bot"; kind: "text"; text: string }
+  | { role: "bot"; kind: "intro" }
   | { role: "bot"; kind: "links" }
   | { role: "user"; kind: "text"; text: string };
 

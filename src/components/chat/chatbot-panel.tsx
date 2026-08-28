@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { X, Send, ExternalLink, Bot, User, Minus, GripHorizontal } from "lucide-react";
+import { X, Send, ExternalLink, Bot, User, Minus, GripHorizontal, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +16,7 @@ import { getDict, TELEGRAM_URL, CONTACT_EMAIL, CONTACT_PHONE } from "@/i18n";
 import { matchFaq } from "@/components/chat/kb";
 import { submitLead } from "@/lib/leads.functions";
 import { askAssistant } from "@/lib/chat.functions";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type Msg =
   | { role: "bot"; kind: "text"; text: string }

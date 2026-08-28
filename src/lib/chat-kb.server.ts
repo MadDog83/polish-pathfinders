@@ -2,7 +2,8 @@ import { LEGAL_KNOWLEDGE_BASE } from "@/lib/legal-kb.server";
 import { getDict, LOCALES, SITE_NAME } from "@/i18n";
 
 const MAX_SITE_KB_CHARS = 5000;
-const MAX_LEGAL_CHARS = 6500;
+const MAX_LEGAL_CHARS = 20000;
+const ALWAYS_INCLUDE_COUNT = 2; // title/sources block + the permit-types overview, so the assistant keeps baseline knowledge of all residence-permit types even when keyword matching misses the right section for a specific message
 
 function tokenize(q: string): string[] {
   return Array.from(
@@ -66,7 +67,14 @@ function selectLegalBase(query: string): string {
 
   const picked: { section: string; index: number }[] = [];
   let total = 0;
+
+  for (let i = 0; i < Math.min(ALWAYS_INCLUDE_COUNT, sections.length); i++) {
+    picked.push({ section: sections[i], index: i });
+    total += sections[i].length;
+  }
+
   for (const item of scored) {
+    if (picked.some((p) => p.index === item.index)) continue;
     if (total + item.section.length > MAX_LEGAL_CHARS) continue;
     picked.push(item);
     total += item.section.length;

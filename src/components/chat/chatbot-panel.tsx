@@ -368,6 +368,25 @@ function LeadForm({ onDone, onBack, onClose, initialService }: { onDone: () => v
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3 rounded-lg border border-border bg-background p-3 text-sm">
+      <div className="flex items-center justify-between gap-2">
+        <button
+          type="button"
+          onClick={onBack}
+          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">{t.backToChat}</span>
+        </button>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label={t.close}
+          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+        >
+          <X className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">{t.close}</span>
+        </button>
+      </div>
       <div className="font-medium">{t.formHeading}</div>
       <p className="text-xs text-muted-foreground">{t.formLead}</p>
       <div>

@@ -300,7 +300,7 @@ const UA: Dict = {
   },
   meta: {
     homeTitle: `Легалізація в Польщі — ${SITE_NAME}`,
-    homeDescription: "Актуальна інформація про карту побиту, постійне перебування, громадянство Польщі та CUKR — трьома мовами, з посиланнями на gov.pl, MOS та inPOL.",
+    homeDescription: "Актуальна інформація про карту побиту, постійне перебування, громадянство та CUKR у Польщі.",
     newsTitle: `Новини легалізації в Польщі — ${SITE_NAME}`,
     newsDescription: "Оновлення про зміни правил легалізації в Польщі — MOS, inPOL, CUKR — з посиланнями на офіційні джерела.",
     privacyTitle: `Політика конфіденційності — ${SITE_NAME}`,
@@ -494,7 +494,7 @@ const EN: Dict = {
   },
   meta: {
     homeTitle: `Poland residence & citizenship — ${SITE_NAME}`,
-    homeDescription: "Up-to-date information about residence cards, permanent residence, Polish citizenship and CUKR — in three languages, with links to gov.pl, MOS and inPOL.",
+    homeDescription: "Up-to-date guidance on residence cards, permanent residence, Polish citizenship and CUKR in Poland.",
     newsTitle: `Poland legalization news — ${SITE_NAME}`,
     newsDescription: "Updates on Polish legalization rule changes — MOS, inPOL, CUKR — with links to official sources.",
     privacyTitle: `Privacy policy — ${SITE_NAME}`,
@@ -688,7 +688,7 @@ const PL: Dict = {
   },
   meta: {
     homeTitle: `Legalizacja pobytu w Polsce — ${SITE_NAME}`,
-    homeDescription: "Aktualne informacje o karcie pobytu, pobycie stałym, obywatelstwie polskim i CUKR — w trzech językach, z linkami do gov.pl, MOS i inPOL.",
+    homeDescription: "Aktualne informacje o karcie pobytu, pobycie stałym, obywatelstwie polskim i CUKR.",
     newsTitle: `Aktualności legalizacji w Polsce — ${SITE_NAME}`,
     newsDescription: "Aktualizacje o zmianach przepisów legalizacji w Polsce — MOS, inPOL, CUKR — z linkami do oficjalnych źródeł.",
     privacyTitle: `Polityka prywatności — ${SITE_NAME}`,

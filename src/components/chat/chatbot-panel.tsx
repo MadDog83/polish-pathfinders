@@ -19,6 +19,7 @@ import { askAssistant } from "@/lib/chat.functions";
 
 type Msg =
   | { role: "bot"; kind: "text"; text: string }
+  | { role: "bot"; kind: "intro" }
   | { role: "bot"; kind: "links" }
   | { role: "user"; kind: "text"; text: string };
 
@@ -36,9 +37,7 @@ export interface ChatbotPanelProps {
 export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
   const locale = useLocale();
   const t = getDict(locale).chatbot;
-  const [messages, setMessages] = useState<Msg[]>(() => [
-    { role: "bot", kind: "text", text: t.subtitle + " — " + t.disclaimer },
-  ]);
+  const [messages, setMessages] = useState<Msg[]>(() => [{ role: "bot", kind: "intro" }]);
   const [input, setInput] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [revealed, setRevealed] = useState(false);
@@ -211,7 +210,7 @@ function MessageBubble({ m, t }: { m: Msg; t: ReturnType<typeof getDict>["chatbo
         <Bot className="h-3.5 w-3.5" />
       </div>
       <div className="max-w-[85%] whitespace-pre-wrap rounded-lg rounded-tl-sm bg-muted px-3 py-2 text-sm">
-        {m.text}
+        {m.kind === "intro" ? `${t.subtitle} — ${t.disclaimer}` : m.text}
       </div>
     </div>
   );

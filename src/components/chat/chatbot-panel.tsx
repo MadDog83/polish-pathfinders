@@ -49,6 +49,16 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, showForm, revealed, thinking]);
 
+  const resetChat = () => {
+    setMessages([{ role: "bot", kind: "intro" }]);
+    historyRef.current = [];
+    setShowForm(false);
+    setRevealed(false);
+    setInput("");
+    setConfirmEnd(false);
+    onOpenChange(false);
+  };
+
   const send = async () => {
     const text = input.trim();
     if (!text || thinking) return;
@@ -59,24 +69,17 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
     try {
       const res = await askAssistant({ data: { messages: historyRef.current } });
       historyRef.current = [...historyRef.current, { role: "assistant" as const, content: res.text }].slice(-12);
-      setMessages((m) => [
-        ...m,
-        { role: "bot", kind: "text", text: res.text },
-        { role: "bot", kind: "links" },
-      ]);
+      setMessages((m) => [...m, { role: "bot", kind: "text", text: res.text }]);
     } catch (err) {
       console.error(err);
       const idx = matchFaq(locale, text);
       const fallback = idx !== null ? getDict(locale).faq.items[idx].a : t.noMatch;
-      setMessages((m) => [
-        ...m,
-        { role: "bot", kind: "text", text: fallback },
-        { role: "bot", kind: "links" },
-      ]);
+      setMessages((m) => [...m, { role: "bot", kind: "text", text: fallback }]);
     } finally {
       setThinking(false);
     }
   };
+
 
   if (!open) return null;
 

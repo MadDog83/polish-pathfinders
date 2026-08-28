@@ -1,0 +1,149 @@
+{
+  "version": 1,
+  "sdk_version": "0.28.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "none"
+  },
+  "mcp": {
+    "server": {
+      "name": "smart-legalization-support",
+      "version": "0.1.0",
+      "title": "Smart Legalization Support"
+    },
+    "tools": [
+      {
+        "name": "search_faq",
+        "title": "Search legalization FAQ",
+        "description": "Search the public FAQ about legalization of stay in Poland (temporary residence card, permanent residence, citizenship, work permits, CUKR). Returns the matching questions with their full answers.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "minLength": 2,
+              "description": "Question or keywords, in Ukrainian, English or Polish."
+            },
+            "language": {
+              "description": "Answer language. Defaults to searching all three languages.",
+              "type": "string",
+              "enum": [
+                "uk",
+                "en",
+                "pl"
+              ]
+            },
+            "limit": {
+              "description": "Maximum number of FAQ entries to return (default 3).",
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "query"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_services",
+        "title": "List services",
+        "description": "List the legalization services offered by Smart Legalization Support, with a short description of each, in the requested language.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "language": {
+              "description": "Language of the output (default 'en').",
+              "type": "string",
+              "enum": [
+                "uk",
+                "en",
+                "pl"
+              ]
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_news",
+        "title": "List published news",
+        "description": "List published news articles about legalization of stay in Poland, newest first, in the requested language.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "language": {
+              "description": "Language of the articles (default 'en').",
+              "type": "string",
+              "enum": [
+                "uk",
+                "en",
+                "pl"
+              ]
+            },
+            "limit": {
+              "description": "Maximum number of articles to return (default 10, max 50).",
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_news_article",
+        "title": "Get news article",
+        "description": "Fetch one published news article by its slug and language.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "slug": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Article slug, e.g. 'cukr-2027'."
+            },
+            "language": {
+              "description": "Language of the article (default 'en').",
+              "type": "string",
+              "enum": [
+                "uk",
+                "en",
+                "pl"
+              ]
+            }
+          },
+          "required": [
+            "slug"
+          ]
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}

@@ -42,12 +42,24 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
   const [showForm, setShowForm] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const [thinking, setThinking] = useState(false);
+  const [confirmEnd, setConfirmEnd] = useState(false);
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const historyRef = useRef<{ role: "user" | "assistant"; content: string }[]>([]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, showForm, revealed, thinking]);
+
+  const resetChat = () => {
+    setMessages([{ role: "bot", kind: "intro" }]);
+    historyRef.current = [];
+    setShowForm(false);
+    setRevealed(false);
+    setInput("");
+    setConfirmEnd(false);
+    onOpenChange(false);
+  };
 
   const send = async () => {
     const text = input.trim();
@@ -59,24 +71,17 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
     try {
       const res = await askAssistant({ data: { messages: historyRef.current } });
       historyRef.current = [...historyRef.current, { role: "assistant" as const, content: res.text }].slice(-12);
-      setMessages((m) => [
-        ...m,
-        { role: "bot", kind: "text", text: res.text },
-        { role: "bot", kind: "links" },
-      ]);
+      setMessages((m) => [...m, { role: "bot", kind: "text", text: res.text }]);
     } catch (err) {
       console.error(err);
       const idx = matchFaq(locale, text);
       const fallback = idx !== null ? getDict(locale).faq.items[idx].a : t.noMatch;
-      setMessages((m) => [
-        ...m,
-        { role: "bot", kind: "text", text: fallback },
-        { role: "bot", kind: "links" },
-      ]);
+      setMessages((m) => [...m, { role: "bot", kind: "text", text: fallback }]);
     } finally {
       setThinking(false);
     }
   };
+
 
   if (!open) return null;
 
@@ -125,19 +130,48 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
         )}
       </div>
 
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border bg-muted/40 px-3 py-2 text-[11px]">
+        <span className="font-medium text-muted-foreground">{t.officialLinks}</span>
+        <a className="inline-flex items-center gap-1 text-primary underline" href={OFFICIAL.application} target="_blank" rel="noreferrer">MOS <ExternalLink className="h-3 w-3" /></a>
+        <a className="inline-flex items-center gap-1 text-primary underline" href={OFFICIAL.status} target="_blank" rel="noreferrer">inPOL <ExternalLink className="h-3 w-3" /></a>
+        <a className="inline-flex items-center gap-1 text-primary underline" href={OFFICIAL.general} target="_blank" rel="noreferrer">gov.pl/UDSC <ExternalLink className="h-3 w-3" /></a>
+      </div>
+
       {!showForm && !revealed && (
         <div className="border-t border-border p-3">
-          <div className="mb-2">
+          <div className="mb-2 flex gap-2">
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="w-full"
+              className="flex-1"
               onClick={() => setShowForm(true)}
             >
               {t.personalHelp}
             </Button>
+            {confirmEnd ? (
+              <div className="flex items-center gap-1">
+                <span className="text-[11px] text-muted-foreground">{t.endChatConfirm}</span>
+                <Button type="button" size="sm" variant="destructive" className="h-8 px-2 text-xs" onClick={resetChat}>
+                  {t.confirmYes}
+                </Button>
+                <Button type="button" size="sm" variant="ghost" className="h-8 px-2 text-xs" onClick={() => setConfirmEnd(false)}>
+                  {t.confirmNo}
+                </Button>
+              </div>
+            ) : (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 shrink-0 px-2 text-xs text-muted-foreground"
+                onClick={() => setConfirmEnd(true)}
+              >
+                {t.endChat}
+              </Button>
+            )}
           </div>
+
           <form
             onSubmit={(e) => {
               e.preventDefault();

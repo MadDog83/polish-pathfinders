@@ -3,7 +3,12 @@ import { getDict, LOCALES, SITE_NAME } from "@/i18n";
 
 const MAX_SITE_KB_CHARS = 5000;
 const MAX_LEGAL_CHARS = 20000;
+const MAX_LEGAL_BYTES = 15000;
 const ALWAYS_INCLUDE_COUNT = 2; // title/sources block + the permit-types overview, so the assistant keeps baseline knowledge of all residence-permit types even when keyword matching misses the right section for a specific message
+
+function byteLength(text: string): number {
+  return new TextEncoder().encode(text).length;
+}
 
 function tokenize(q: string): string[] {
   return Array.from(
@@ -67,17 +72,22 @@ function selectLegalBase(query: string): string {
 
   const picked: { section: string; index: number }[] = [];
   let total = 0;
+  let totalBytes = 0;
 
   for (let i = 0; i < Math.min(ALWAYS_INCLUDE_COUNT, sections.length); i++) {
     picked.push({ section: sections[i], index: i });
     total += sections[i].length;
+    totalBytes += byteLength(sections[i]);
   }
 
   for (const item of scored) {
     if (picked.some((p) => p.index === item.index)) continue;
     if (total + item.section.length > MAX_LEGAL_CHARS) continue;
+    const sectionBytes = byteLength(item.section);
+    if (totalBytes + sectionBytes > MAX_LEGAL_BYTES) continue;
     picked.push(item);
     total += item.section.length;
+    totalBytes += sectionBytes;
     if (total > MAX_LEGAL_CHARS * 0.9) break;
   }
   picked.sort((a, b) => a.index - b.index);

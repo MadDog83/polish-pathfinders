@@ -51,6 +51,7 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
   useEffect(() => setMounted(true), []);
   const mobile = mounted ? isMobile : typeof window !== "undefined" ? window.innerWidth < 768 : false;
   const dragRef = useRef<{ startX: number; startY: number; baseX: number; baseY: number } | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const historyRef = useRef<{ role: "user" | "assistant"; content: string }[]>([]);
@@ -73,7 +74,25 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
     const d = dragRef.current;
     if (!d) return;
     e.preventDefault();
-    setOffset({ x: d.baseX + (e.clientX - d.startX), y: d.baseY + (e.clientY - d.startY) });
+    let nextX = d.baseX + (e.clientX - d.startX);
+    let nextY = d.baseY + (e.clientY - d.startY);
+
+    const panel = panelRef.current;
+    if (panel && typeof window !== "undefined") {
+      const margin = 20; // matches the bottom-5 / right-5 (5 * 4px) base offset
+      const width = panel.offsetWidth;
+      const height = panel.offsetHeight;
+      const naturalLeft = window.innerWidth - margin - width;
+      const naturalTop = window.innerHeight - margin - height;
+      const minX = -naturalLeft;
+      const maxX = margin;
+      const minY = -naturalTop;
+      const maxY = margin;
+      nextX = Math.min(maxX, Math.max(minX, nextX));
+      nextY = Math.min(maxY, Math.max(minY, nextY));
+    }
+
+    setOffset({ x: nextX, y: nextY });
   }, []);
 
   const onDragEnd = useCallback(() => {

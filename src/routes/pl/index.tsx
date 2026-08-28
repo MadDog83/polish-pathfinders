@@ -13,6 +13,8 @@ export const Route = createFileRoute("/pl/")({
       { property: "og:title", content: t.meta.homeTitle },
       { property: "og:description", content: t.meta.homeDescription },
       { property: "og:locale", content: "pl_PL" },
+      { property: "og:image", content: `${SITE_URL}${hero1200}` },
+      { name: "twitter:image", content: `${SITE_URL}${hero1200}` },
     ],
     links: [
       { rel: "canonical", href: `${SITE_URL}/pl` },

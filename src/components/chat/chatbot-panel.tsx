@@ -57,7 +57,13 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
 
   const onDragStart = useCallback(
     (e: React.PointerEvent) => {
-      if ((e.target as HTMLElement).closest("button")) return;
+      const target = e.target as HTMLElement;
+      if (
+        target.closest("button, a, input, textarea, select, [contenteditable]") ||
+        (target.closest("[role='button']") as HTMLElement | null)
+      ) {
+        return;
+      }
       dragRef.current = { startX: e.clientX, startY: e.clientY, baseX: offset.x, baseY: offset.y };
       (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     },

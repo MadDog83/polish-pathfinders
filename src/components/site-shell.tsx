@@ -3,7 +3,7 @@ import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LangSwitcher } from "@/components/lang-switcher";
 import { useLocale, localeFromPath } from "@/lib/use-locale";
-import { DEFAULT_LOCALE, LOCALES, SITE_NAME, getDict, localePath } from "@/i18n";
+import { LOCALES, SITE_NAME, getDict, localePath } from "@/i18n";
 import { Button } from "@/components/ui/button";
 import { MessageCircle, Scale } from "lucide-react";
 
@@ -137,7 +137,7 @@ function LangLinks() {
   return (
     <span className="inline-flex gap-3">
       {LOCALES.map((l) => (
-        <Link key={l} to={l === DEFAULT_LOCALE ? "/" : `/${l}`} className="hover:text-foreground" aria-current={localeFromPath(pathname) === l}>
+        <Link key={l} to={l === "en" ? "/en" : l === "pl" ? "/pl" : "/"} className="hover:text-foreground" aria-current={localeFromPath(pathname) === l}>
           {l.toUpperCase()}
         </Link>
       ))}

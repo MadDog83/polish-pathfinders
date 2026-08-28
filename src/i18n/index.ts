@@ -283,7 +283,7 @@ const UA: Dict = {
     error: "Не вдалося надіслати. Спробуйте ще раз.",
   },
   meta: {
-    homeTitle: `${SITE_NAME} — Легалізація в Польщі: карта побиту, ПМП, громадянство`,
+    homeTitle: `Легалізація в Польщі — ${SITE_NAME}`,
     homeDescription: "Актуальна інформація про карту побиту, постійне перебування, громадянство Польщі та CUKR — трьома мовами, з посиланнями на gov.pl, MOS та inPOL.",
     newsTitle: `Новини легалізації в Польщі — ${SITE_NAME}`,
     newsDescription: "Оновлення про зміни правил легалізації в Польщі — MOS, inPOL, CUKR — з посиланнями на офіційні джерела.",
@@ -411,7 +411,7 @@ const EN: Dict = {
   news: {
     heading: "News & rule changes",
     lead: "Short updates with links to official sources.",
-    readMore: "Read more",
+    readMore: "Read full article",
     seeAll: "All news",
     source: "Source",
     latest: "Latest news",
@@ -469,7 +469,7 @@ const EN: Dict = {
     error: "Couldn't send. Please try again.",
   },
   meta: {
-    homeTitle: `${SITE_NAME} — Poland residence card, PR & citizenship guide`,
+    homeTitle: `Poland residence & citizenship — ${SITE_NAME}`,
     homeDescription: "Up-to-date information about residence cards, permanent residence, Polish citizenship and CUKR — in three languages, with links to gov.pl, MOS and inPOL.",
     newsTitle: `Poland legalization news — ${SITE_NAME}`,
     newsDescription: "Updates on Polish legalization rule changes — MOS, inPOL, CUKR — with links to official sources.",
@@ -655,7 +655,7 @@ const PL: Dict = {
     error: "Nie udało się wysłać. Spróbuj ponownie.",
   },
   meta: {
-    homeTitle: `${SITE_NAME} — Karta pobytu, pobyt stały i obywatelstwo w Polsce`,
+    homeTitle: `Legalizacja pobytu w Polsce — ${SITE_NAME}`,
     homeDescription: "Aktualne informacje o karcie pobytu, pobycie stałym, obywatelstwie polskim i CUKR — w trzech językach, z linkami do gov.pl, MOS i inPOL.",
     newsTitle: `Aktualności legalizacji w Polsce — ${SITE_NAME}`,
     newsDescription: "Aktualizacje o zmianach przepisów legalizacji w Polsce — MOS, inPOL, CUKR — z linkami do oficjalnych źródeł.",

@@ -87,6 +87,10 @@ export interface Dict {
     linkStatus: string;
     linkGeneral: string;
     personalHelp: string;
+    endChat: string;
+    endChatConfirm: string;
+    confirmYes: string;
+    confirmNo: string;
     formHeading: string;
     formLead: string;
     name: string;
@@ -261,6 +265,10 @@ const UA: Dict = {
     linkStatus: "Статус справи — inPOL",
     linkGeneral: "Загальна інформація — gov.pl/UDSC",
     personalHelp: "Хочу персональну допомогу",
+    endChat: "Завершити чат",
+    endChatConfirm: "Ви впевнені?",
+    confirmYes: "Так",
+    confirmNo: "Ні",
     formHeading: "Залишити контакт",
     formLead: "Залиште контакт і ми надішлемо вам email, телефон і Telegram фахівця.",
     name: "Ім'я",
@@ -447,6 +455,10 @@ const EN: Dict = {
     linkStatus: "Case status — inPOL",
     linkGeneral: "General information — gov.pl/UDSC",
     personalHelp: "I need personal help",
+    endChat: "End chat",
+    endChatConfirm: "Are you sure?",
+    confirmYes: "Yes",
+    confirmNo: "No",
     formHeading: "Leave your contact",
     formLead: "Share your contact and we will send the specialist's email, phone and Telegram.",
     name: "Name",
@@ -633,6 +645,10 @@ const PL: Dict = {
     linkStatus: "Status sprawy — inPOL",
     linkGeneral: "Informacje ogólne — gov.pl/UDSC",
     personalHelp: "Chcę pomocy osobistej",
+    endChat: "Zakończ czat",
+    endChatConfirm: "Czy na pewno?",
+    confirmYes: "Tak",
+    confirmNo: "Nie",
     formHeading: "Zostaw kontakt",
     formLead: "Zostaw kontakt, a wyślemy Ci e-mail, telefon i Telegram specjalisty.",
     name: "Imię",

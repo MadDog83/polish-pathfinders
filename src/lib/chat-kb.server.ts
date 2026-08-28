@@ -67,7 +67,14 @@ function selectLegalBase(query: string): string {
 
   const picked: { section: string; index: number }[] = [];
   let total = 0;
+
+  for (let i = 0; i < Math.min(ALWAYS_INCLUDE_COUNT, sections.length); i++) {
+    picked.push({ section: sections[i], index: i });
+    total += sections[i].length;
+  }
+
   for (const item of scored) {
+    if (picked.some((p) => p.index === item.index)) continue;
     if (total + item.section.length > MAX_LEGAL_CHARS) continue;
     picked.push(item);
     total += item.section.length;

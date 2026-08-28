@@ -3,7 +3,7 @@ import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LangSwitcher } from "@/components/lang-switcher";
 import { useLocale, localeFromPath } from "@/lib/use-locale";
-import { DEFAULT_LOCALE, LOCALES, SITE_NAME, getDict, localePath } from "@/i18n";
+import { LOCALES, SITE_NAME, getDict, localePath } from "@/i18n";
 import { Button } from "@/components/ui/button";
 import { MessageCircle, Scale } from "lucide-react";
 

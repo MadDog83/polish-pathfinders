@@ -112,6 +112,18 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
           />
         )}
         {revealed && <ContactReveal />}
+        {thinking && (
+          <div className="flex gap-2" aria-live="polite">
+            <div className="mt-0.5 grid h-6 w-6 place-items-center rounded-full bg-accent text-accent-foreground">
+              <Bot className="h-3.5 w-3.5" />
+            </div>
+            <div className="flex items-center gap-1 rounded-lg rounded-tl-sm bg-muted px-3 py-2.5">
+              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:0ms]" />
+              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:150ms]" />
+              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:300ms]" />
+            </div>
+          </div>
+        )}
       </div>
 
       {!showForm && !revealed && (

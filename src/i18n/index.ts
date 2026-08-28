@@ -108,6 +108,7 @@ export interface Dict {
     telegram: string;
     close: string;
     reopen: string;
+    backToChat: string;
     services: string[];
     validationEmailOrPhone: string;
     validationConsent: string;

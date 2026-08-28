@@ -42,6 +42,8 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
   const [showForm, setShowForm] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const [thinking, setThinking] = useState(false);
+  const [confirmEnd, setConfirmEnd] = useState(false);
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const historyRef = useRef<{ role: "user" | "assistant"; content: string }[]>([]);
 

@@ -28,7 +28,7 @@ export const askAssistant = createServerFn({ method: "POST" })
     const body = JSON.stringify({
       model: "openai/gpt-oss-120b",
       temperature: 0.2,
-      max_tokens: 700,
+      max_tokens: 1200,
       messages: [{ role: "system", content: buildSystemPrompt(lastUser) }, ...history],
     });
 

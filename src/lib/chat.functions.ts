@@ -28,7 +28,7 @@ export const askAssistant = createServerFn({ method: "POST" })
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
+        model: "openai/gpt-oss-120b",
         temperature: 0.2,
         max_tokens: 700,
         messages: [{ role: "system", content: buildSystemPrompt() }, ...data.messages],

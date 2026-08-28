@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { X, Send, ExternalLink, Bot, User, Minus, GripHorizontal, Plus, MessageCircle } from "lucide-react";
+import { X, Send, ExternalLink, Bot, User, Minus, GripHorizontal, Plus, MessageCircle, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -182,6 +182,8 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
         {showForm && !revealed && (
           <LeadForm
             onDone={() => setRevealed(true)}
+            onBack={() => setShowForm(false)}
+            onClose={() => onOpenChange(false)}
             initialService=""
           />
         )}
@@ -323,7 +325,7 @@ function MessageBubble({ m, t }: { m: Msg; t: ReturnType<typeof getDict>["chatbo
   );
 }
 
-function LeadForm({ onDone, initialService }: { onDone: () => void; initialService: string }) {
+function LeadForm({ onDone, onBack, onClose, initialService }: { onDone: () => void; onBack: () => void; onClose: () => void; initialService: string }) {
   const locale = useLocale();
   const t = getDict(locale).chatbot;
   const [name, setName] = useState("");
@@ -366,6 +368,25 @@ function LeadForm({ onDone, initialService }: { onDone: () => void; initialServi
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3 rounded-lg border border-border bg-background p-3 text-sm">
+      <div className="flex items-center justify-between gap-2">
+        <button
+          type="button"
+          onClick={onBack}
+          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">{t.backToChat}</span>
+        </button>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label={t.close}
+          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+        >
+          <X className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">{t.close}</span>
+        </button>
+      </div>
       <div className="font-medium">{t.formHeading}</div>
       <p className="text-xs text-muted-foreground">{t.formLead}</p>
       <div>

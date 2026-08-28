@@ -32,6 +32,7 @@ import { Route as EnNewsIndexRouteImport } from './routes/en/news/index'
 import { Route as PlNewsSlugRouteImport } from './routes/pl/news/$slug'
 import { Route as EnNewsSlugRouteImport } from './routes/en/news/$slug'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
+import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -150,6 +151,11 @@ const Char91DotmcpChar93InvokeToolToolRoute =
     path: '/.mcp/invoke-tool/$tool',
     getParentRoute: () => rootRouteImport,
   } as any)
+const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
+  id: '/.lovable/oauth/consent',
+  path: '/.lovable/oauth/consent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -169,6 +175,7 @@ export interface FileRoutesByFullPath {
   '/en/': typeof EnIndexRoute
   '/news/': typeof NewsIndexRoute
   '/pl/': typeof PlIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/en/news/$slug': typeof EnNewsSlugRoute
   '/pl/news/$slug': typeof PlNewsSlugRoute
@@ -193,6 +200,7 @@ export interface FileRoutesByTo {
   '/en': typeof EnIndexRoute
   '/news': typeof NewsIndexRoute
   '/pl': typeof PlIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/en/news/$slug': typeof EnNewsSlugRoute
   '/pl/news/$slug': typeof PlNewsSlugRoute
@@ -219,6 +227,7 @@ export interface FileRoutesById {
   '/en/': typeof EnIndexRoute
   '/news/': typeof NewsIndexRoute
   '/pl/': typeof PlIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/en/news/$slug': typeof EnNewsSlugRoute
   '/pl/news/$slug': typeof PlNewsSlugRoute
@@ -245,6 +254,7 @@ export interface FileRouteTypes {
     | '/en/'
     | '/news/'
     | '/pl/'
+    | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/en/news/$slug'
     | '/pl/news/$slug'
@@ -269,6 +279,7 @@ export interface FileRouteTypes {
     | '/en'
     | '/news'
     | '/pl'
+    | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/en/news/$slug'
     | '/pl/news/$slug'
@@ -294,6 +305,7 @@ export interface FileRouteTypes {
     | '/en/'
     | '/news/'
     | '/pl/'
+    | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/en/news/$slug'
     | '/pl/news/$slug'
@@ -319,6 +331,7 @@ export interface RootRouteChildren {
   EnIndexRoute: typeof EnIndexRoute
   NewsIndexRoute: typeof NewsIndexRoute
   PlIndexRoute: typeof PlIndexRoute
+  DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   EnNewsSlugRoute: typeof EnNewsSlugRoute
   PlNewsSlugRoute: typeof PlNewsSlugRoute
@@ -489,6 +502,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/.lovable/oauth/consent': {
+      id: '/.lovable/oauth/consent'
+      path: '/.lovable/oauth/consent'
+      fullPath: '/.lovable/oauth/consent'
+      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -522,6 +542,7 @@ const rootRouteChildren: RootRouteChildren = {
   EnIndexRoute: EnIndexRoute,
   NewsIndexRoute: NewsIndexRoute,
   PlIndexRoute: PlIndexRoute,
+  DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   EnNewsSlugRoute: EnNewsSlugRoute,
   PlNewsSlugRoute: PlNewsSlugRoute,

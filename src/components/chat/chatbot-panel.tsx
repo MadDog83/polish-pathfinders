@@ -242,7 +242,10 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
           </form>
         </div>
       )}
+      </>
+      )}
     </div>
+
   );
 }
 

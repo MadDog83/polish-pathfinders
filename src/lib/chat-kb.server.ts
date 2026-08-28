@@ -1,23 +1,8 @@
 import { LEGAL_KNOWLEDGE_BASE } from "@/lib/legal-kb.server";
 import { getDict, LOCALES, SITE_NAME } from "@/i18n";
 
-export function buildKnowledgeBase(): string {
-  const blocks: string[] = [];
-  for (const locale of LOCALES) {
-    const d = getDict(locale);
-    const services = d.services.items.map((s) => `- ${s.title}: ${s.body}`).join("\n");
-    const faq = d.faq.items.map((i) => `Q: ${i.q}\nA: ${i.a}`).join("\n\n");
-    blocks.push(`### [${locale.toUpperCase()}] Services\n${services}\n\n### [${locale.toUpperCase()}] FAQ\n${faq}`);
-  }
-  return blocks.join("\n\n");
-}
-
-const MAX_LEGAL_CHARS = 14000;
-
-function splitSections(text: string): string[] {
-  const parts = text.split(/\n(?=#{1,3} )/g).filter((p) => p.trim().length > 0);
-  return parts.length > 1 ? parts : [text];
-}
+const MAX_SITE_KB_CHARS = 5000;
+const MAX_LEGAL_CHARS = 6500;
 
 function tokenize(q: string): string[] {
   return Array.from(
@@ -29,6 +14,42 @@ function tokenize(q: string): string[] {
         .filter((w) => w.length > 3),
     ),
   );
+}
+
+function relevance(text: string, words: string[]): number {
+  const lower = text.toLowerCase();
+  return words.reduce((score, word) => score + (lower.includes(word) ? 1 : 0), 0);
+}
+
+export function buildKnowledgeBase(query = ""): string {
+  const words = tokenize(query);
+  const blocks: { text: string; score: number; index: number }[] = [];
+  let index = 0;
+  for (const locale of LOCALES) {
+    const d = getDict(locale);
+    const services = d.services.items.map((s) => `- ${s.title}: ${s.body}`).join("\n");
+    const serviceText = `### [${locale.toUpperCase()}] Services\n${services}`;
+    blocks.push({ text: serviceText, score: relevance(serviceText, words), index: index++ });
+    for (const item of d.faq.items) {
+      const text = `### [${locale.toUpperCase()}] FAQ\nQ: ${item.q}\nA: ${item.a}`;
+      blocks.push({ text, score: relevance(text, words), index: index++ });
+    }
+  }
+  blocks.sort((a, b) => b.score - a.score || a.index - b.index);
+  const selected: typeof blocks = [];
+  let total = 0;
+  for (const block of blocks) {
+    if (total + block.text.length > MAX_SITE_KB_CHARS) continue;
+    selected.push(block);
+    total += block.text.length;
+  }
+  selected.sort((a, b) => a.index - b.index);
+  return selected.map((block) => block.text).join("\n\n");
+}
+
+function splitSections(text: string): string[] {
+  const parts = text.split(/\n(?=#{1,3} )/g).filter((p) => p.trim().length > 0);
+  return parts.length > 1 ? parts : [text];
 }
 
 /** Keeps only the legal sections relevant to the query so the prompt stays within provider payload limits. */
@@ -64,7 +85,7 @@ export function buildSystemPrompt(query = ""): string {
     "Be concise: 2-4 sentences first, then short bullet details if useful. Never invent fees, deadlines or legal guarantees. You are not a lawyer; do not give binding legal advice.",
     "",
     "# KNOWLEDGE BASE",
-    buildKnowledgeBase(),
+    buildKnowledgeBase(query),
     "",
     "# ДОДАТКОВА ПРАВОВА БАЗА (офіційні закони — ustawa o cudzoziemcach та поправки 2025/2026, з посиланнями на статті; наведено релевантні розділи)",
     selectLegalBase(query),

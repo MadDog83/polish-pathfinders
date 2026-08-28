@@ -1,6 +1,6 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
-import { supabaseAnon } from "../supabase";
+import { supabaseForUser } from "../supabase";
 
 export default defineTool({
   name: "get_news_article",
@@ -11,8 +11,9 @@ export default defineTool({
     language: z.enum(["uk", "en", "pl"]).optional().describe("Language of the article (default 'en')."),
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async ({ slug, language }) => {
-    const supabase = supabaseAnon();
+  handler: async ({ slug, language }, ctx) => {
+    if (!ctx.isAuthenticated()) return { content: [{ type: "text" as const, text: "Not authenticated" }], isError: true };
+    const supabase = supabaseForUser(ctx);
     const { data, error } = await supabase
       .from("news")
       .select("slug, language, title, summary, source_url, published_at")

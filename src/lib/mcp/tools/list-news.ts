@@ -1,6 +1,6 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
-import { supabaseAnon } from "../supabase";
+import { supabaseForUser } from "../supabase";
 
 export default defineTool({
   name: "list_news",
@@ -12,8 +12,9 @@ export default defineTool({
     limit: z.number().int().optional().describe("Maximum number of articles to return (default 10, max 50)."),
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async ({ language, limit }) => {
-    const supabase = supabaseAnon();
+  handler: async ({ language, limit }, ctx) => {
+    if (!ctx.isAuthenticated()) return { content: [{ type: "text" as const, text: "Not authenticated" }], isError: true };
+    const supabase = supabaseForUser(ctx);
     const max = Math.min(Math.max(limit ?? 10, 1), 50);
     const { data, error } = await supabase
       .from("news")

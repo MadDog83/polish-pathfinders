@@ -91,6 +91,9 @@ export interface Dict {
     endChatConfirm: string;
     confirmYes: string;
     confirmNo: string;
+    minimize: string;
+    expand: string;
+    dragHint: string;
     formHeading: string;
     formLead: string;
     name: string;
@@ -269,6 +272,9 @@ const UA: Dict = {
     endChatConfirm: "Ви впевнені?",
     confirmYes: "Так",
     confirmNo: "Ні",
+    minimize: "Згорнути",
+    expand: "Розгорнути",
+    dragHint: "Перемістити вікно чату",
     formHeading: "Залишити контакт",
     formLead: "Залиште контакт і ми надішлемо вам email, телефон і Telegram фахівця.",
     name: "Ім'я",
@@ -459,6 +465,9 @@ const EN: Dict = {
     endChatConfirm: "Are you sure?",
     confirmYes: "Yes",
     confirmNo: "No",
+    minimize: "Minimize",
+    expand: "Expand",
+    dragHint: "Move chat window",
     formHeading: "Leave your contact",
     formLead: "Share your contact and we will send the specialist's email, phone and Telegram.",
     name: "Name",
@@ -649,6 +658,9 @@ const PL: Dict = {
     endChatConfirm: "Czy na pewno?",
     confirmYes: "Tak",
     confirmNo: "Nie",
+    minimize: "Zwiń",
+    expand: "Rozwiń",
+    dragHint: "Przenieś okno czatu",
     formHeading: "Zostaw kontakt",
     formLead: "Zostaw kontakt, a wyślemy Ci e-mail, telefon i Telegram specjalisty.",
     name: "Imię",

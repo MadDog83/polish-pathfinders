@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { X, Send, ExternalLink, Bot, User } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { X, Send, ExternalLink, Bot, User, Minus, GripHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,13 +43,38 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
   const [revealed, setRevealed] = useState(false);
   const [thinking, setThinking] = useState(false);
   const [confirmEnd, setConfirmEnd] = useState(false);
+  const [minimized, setMinimized] = useState(false);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const dragRef = useRef<{ startX: number; startY: number; baseX: number; baseY: number } | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const historyRef = useRef<{ role: "user" | "assistant"; content: string }[]>([]);
 
   useEffect(() => {
+    if (minimized) return;
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, showForm, revealed, thinking]);
+  }, [messages, showForm, revealed, thinking, minimized]);
+
+  const onDragStart = useCallback(
+    (e: React.PointerEvent) => {
+      if ((e.target as HTMLElement).closest("button")) return;
+      dragRef.current = { startX: e.clientX, startY: e.clientY, baseX: offset.x, baseY: offset.y };
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    },
+    [offset],
+  );
+
+  const onDragMove = useCallback((e: React.PointerEvent) => {
+    const d = dragRef.current;
+    if (!d) return;
+    e.preventDefault();
+    setOffset({ x: d.baseX + (e.clientX - d.startX), y: d.baseY + (e.clientY - d.startY) });
+  }, []);
+
+  const onDragEnd = useCallback(() => {
+    dragRef.current = null;
+  }, []);
+
 
   const resetChat = () => {
     setMessages([{ role: "bot", kind: "intro" }]);
@@ -89,21 +114,46 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
     <div
       role="dialog"
       aria-label={t.title}
-      className="fixed bottom-5 right-5 z-50 flex h-[min(640px,90vh)] w-[min(400px,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl"
+      style={{ transform: `translate(${offset.x}px, ${offset.y}px)` }}
+      className={`fixed bottom-5 right-5 z-50 flex w-[min(400px,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl ${
+        minimized ? "h-auto" : "h-[min(640px,90vh)]"
+      }`}
     >
-      <div className="flex items-center justify-between border-b border-border bg-primary px-4 py-3 text-primary-foreground">
-        <div>
-          <div className="text-sm font-semibold">{t.title}</div>
-          <div className="text-xs opacity-80">{t.subtitle}</div>
+      <div
+        onPointerDown={onDragStart}
+        onPointerMove={onDragMove}
+        onPointerUp={onDragEnd}
+        onPointerCancel={onDragEnd}
+        title={t.dragHint}
+        className="flex touch-none items-center justify-between gap-2 border-b border-border bg-primary px-4 py-3 text-primary-foreground select-none cursor-grab active:cursor-grabbing"
+      >
+        <div className="flex min-w-0 items-center gap-2">
+          <GripHorizontal className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
+          <div className="min-w-0">
+            <div className="truncate text-sm font-semibold">{t.title}</div>
+            <div className="truncate text-xs opacity-80">{t.subtitle}</div>
+          </div>
         </div>
-        <button
-          onClick={() => onOpenChange(false)}
-          aria-label={t.close}
-          className="rounded-md p-1 hover:bg-white/10"
-        >
-          <X className="h-4 w-4" />
-        </button>
+        <div className="flex shrink-0 items-center gap-1">
+          <button
+            onClick={() => setMinimized((v) => !v)}
+            aria-label={minimized ? t.expand : t.minimize}
+            className="rounded-md p-1 hover:bg-white/10"
+          >
+            <Minus className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => onOpenChange(false)}
+            aria-label={t.close}
+            className="rounded-md p-1 hover:bg-white/10"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
       </div>
+      {!minimized && (
+      <>
+
 
       <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
         {messages.map((m, i) => (
@@ -192,7 +242,10 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
           </form>
         </div>
       )}
+      </>
+      )}
     </div>
+
   );
 }
 

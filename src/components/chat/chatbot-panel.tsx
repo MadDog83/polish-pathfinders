@@ -114,21 +114,46 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
     <div
       role="dialog"
       aria-label={t.title}
-      className="fixed bottom-5 right-5 z-50 flex h-[min(640px,90vh)] w-[min(400px,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl"
+      style={{ transform: `translate(${offset.x}px, ${offset.y}px)` }}
+      className={`fixed bottom-5 right-5 z-50 flex w-[min(400px,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl ${
+        minimized ? "h-auto" : "h-[min(640px,90vh)]"
+      }`}
     >
-      <div className="flex items-center justify-between border-b border-border bg-primary px-4 py-3 text-primary-foreground">
-        <div>
-          <div className="text-sm font-semibold">{t.title}</div>
-          <div className="text-xs opacity-80">{t.subtitle}</div>
+      <div
+        onPointerDown={onDragStart}
+        onPointerMove={onDragMove}
+        onPointerUp={onDragEnd}
+        onPointerCancel={onDragEnd}
+        title={t.dragHint}
+        className="flex touch-none items-center justify-between gap-2 border-b border-border bg-primary px-4 py-3 text-primary-foreground select-none cursor-grab active:cursor-grabbing"
+      >
+        <div className="flex min-w-0 items-center gap-2">
+          <GripHorizontal className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
+          <div className="min-w-0">
+            <div className="truncate text-sm font-semibold">{t.title}</div>
+            <div className="truncate text-xs opacity-80">{t.subtitle}</div>
+          </div>
         </div>
-        <button
-          onClick={() => onOpenChange(false)}
-          aria-label={t.close}
-          className="rounded-md p-1 hover:bg-white/10"
-        >
-          <X className="h-4 w-4" />
-        </button>
+        <div className="flex shrink-0 items-center gap-1">
+          <button
+            onClick={() => setMinimized((v) => !v)}
+            aria-label={minimized ? t.expand : t.minimize}
+            className="rounded-md p-1 hover:bg-white/10"
+          >
+            <Minus className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => onOpenChange(false)}
+            aria-label={t.close}
+            className="rounded-md p-1 hover:bg-white/10"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
       </div>
+      {!minimized && (
+      <>
+
 
       <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
         {messages.map((m, i) => (

@@ -151,6 +151,7 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
 
   return (
     <div
+      ref={panelRef}
       role="dialog"
       aria-label={t.title}
       style={{ transform: `translate(${offset.x}px, ${offset.y}px)` }}

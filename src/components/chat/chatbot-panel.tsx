@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { X, Send, ExternalLink, Bot, User, Minus, GripHorizontal, Plus, MessageCircle, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +33,23 @@ const OFFICIAL = {
 export interface ChatbotPanelProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+}
+
+function clampPanelOffset(x: number, y: number, panel: HTMLDivElement | null): { x: number; y: number } {
+  if (!panel || typeof window === "undefined") return { x, y };
+  const margin = 20; // matches the bottom-5 / right-5 (5 * 4px) base offset
+  const width = panel.offsetWidth;
+  const height = panel.offsetHeight;
+  const naturalLeft = window.innerWidth - margin - width;
+  const naturalTop = window.innerHeight - margin - height;
+  const minX = -naturalLeft;
+  const maxX = margin;
+  const minY = -naturalTop;
+  const maxY = margin;
+  return {
+    x: Math.min(maxX, Math.max(minX, x)),
+    y: Math.min(maxY, Math.max(minY, y)),
+  };
 }
 
 export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
@@ -74,30 +91,18 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
     const d = dragRef.current;
     if (!d) return;
     e.preventDefault();
-    let nextX = d.baseX + (e.clientX - d.startX);
-    let nextY = d.baseY + (e.clientY - d.startY);
-
-    const panel = panelRef.current;
-    if (panel && typeof window !== "undefined") {
-      const margin = 20; // matches the bottom-5 / right-5 (5 * 4px) base offset
-      const width = panel.offsetWidth;
-      const height = panel.offsetHeight;
-      const naturalLeft = window.innerWidth - margin - width;
-      const naturalTop = window.innerHeight - margin - height;
-      const minX = -naturalLeft;
-      const maxX = margin;
-      const minY = -naturalTop;
-      const maxY = margin;
-      nextX = Math.min(maxX, Math.max(minX, nextX));
-      nextY = Math.min(maxY, Math.max(minY, nextY));
-    }
-
-    setOffset({ x: nextX, y: nextY });
+    const nextX = d.baseX + (e.clientX - d.startX);
+    const nextY = d.baseY + (e.clientY - d.startY);
+    setOffset(clampPanelOffset(nextX, nextY, panelRef.current));
   }, []);
 
   const onDragEnd = useCallback(() => {
     dragRef.current = null;
   }, []);
+
+  useLayoutEffect(() => {
+    setOffset((prev) => clampPanelOffset(prev.x, prev.y, panelRef.current));
+  }, [minimized]);
 
 
   const resetChat = () => {

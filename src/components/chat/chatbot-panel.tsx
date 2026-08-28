@@ -37,9 +37,7 @@ export interface ChatbotPanelProps {
 export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
   const locale = useLocale();
   const t = getDict(locale).chatbot;
-  const [messages, setMessages] = useState<Msg[]>(() => [
-    { role: "bot", kind: "text", text: t.subtitle + " — " + t.disclaimer },
-  ]);
+  const [messages, setMessages] = useState<Msg[]>(() => [{ role: "bot", kind: "intro" }]);
   const [input, setInput] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [revealed, setRevealed] = useState(false);

@@ -7,7 +7,17 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getDict, SITE_NAME } from "@/i18n";
 
+function safeNext(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  if (!value.startsWith("/") || value.startsWith("//")) return undefined;
+  return value;
+}
+
 export const Route = createFileRoute("/auth")({
+  validateSearch: (s: Record<string, unknown>): { next?: string } => {
+    const next = safeNext(s.next);
+    return next ? { next } : {};
+  },
   head: () => ({ meta: [{ title: `Admin — ${SITE_NAME}` }, { name: "robots", content: "noindex" }] }),
   component: AuthPage,
 });
@@ -15,6 +25,7 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const t = getDict("en").auth;
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
   const [mode, setMode] = useState<"in" | "up">("in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,12 +40,16 @@ function AuthPage() {
       if (mode === "in") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        if (next) {
+          window.location.href = next;
+          return;
+        }
         navigate({ to: "/admin" });
       } else {
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: `${window.location.origin}/admin` },
+          options: { emailRedirectTo: `${window.location.origin}${next ?? "/admin"}` },
         });
         if (error) throw error;
         setError("Check your email to confirm.");

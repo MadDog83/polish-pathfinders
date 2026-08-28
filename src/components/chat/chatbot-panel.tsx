@@ -130,19 +130,48 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
         )}
       </div>
 
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border bg-muted/40 px-3 py-2 text-[11px]">
+        <span className="font-medium text-muted-foreground">{t.officialLinks}</span>
+        <a className="inline-flex items-center gap-1 text-primary underline" href={OFFICIAL.application} target="_blank" rel="noreferrer">MOS <ExternalLink className="h-3 w-3" /></a>
+        <a className="inline-flex items-center gap-1 text-primary underline" href={OFFICIAL.status} target="_blank" rel="noreferrer">inPOL <ExternalLink className="h-3 w-3" /></a>
+        <a className="inline-flex items-center gap-1 text-primary underline" href={OFFICIAL.general} target="_blank" rel="noreferrer">gov.pl/UDSC <ExternalLink className="h-3 w-3" /></a>
+      </div>
+
       {!showForm && !revealed && (
         <div className="border-t border-border p-3">
-          <div className="mb-2">
+          <div className="mb-2 flex gap-2">
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="w-full"
+              className="flex-1"
               onClick={() => setShowForm(true)}
             >
               {t.personalHelp}
             </Button>
+            {confirmEnd ? (
+              <div className="flex items-center gap-1">
+                <span className="text-[11px] text-muted-foreground">{t.endChatConfirm}</span>
+                <Button type="button" size="sm" variant="destructive" className="h-8 px-2 text-xs" onClick={resetChat}>
+                  {t.confirmYes}
+                </Button>
+                <Button type="button" size="sm" variant="ghost" className="h-8 px-2 text-xs" onClick={() => setConfirmEnd(false)}>
+                  {t.confirmNo}
+                </Button>
+              </div>
+            ) : (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 shrink-0 px-2 text-xs text-muted-foreground"
+                onClick={() => setConfirmEnd(true)}
+              >
+                {t.endChat}
+              </Button>
+            )}
           </div>
+
           <form
             onSubmit={(e) => {
               e.preventDefault();

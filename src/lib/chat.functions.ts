@@ -21,6 +21,10 @@ export const askAssistant = createServerFn({ method: "POST" })
 
     const { buildSystemPrompt } = await import("@/lib/chat-kb.server");
 
+    // Keep the payload small: only recent turns + retrieval-narrowed knowledge base.
+    const history = data.messages.slice(-8);
+    const lastUser = [...history].reverse().find((m) => m.role === "user")?.content ?? "";
+
     const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -31,9 +35,10 @@ export const askAssistant = createServerFn({ method: "POST" })
         model: "openai/gpt-oss-120b",
         temperature: 0.2,
         max_tokens: 700,
-        messages: [{ role: "system", content: buildSystemPrompt() }, ...data.messages],
+        messages: [{ role: "system", content: buildSystemPrompt(lastUser) }, ...history],
       }),
     });
+
 
     if (!res.ok) {
       const detail = await res.text();

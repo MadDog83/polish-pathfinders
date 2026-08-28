@@ -115,6 +115,21 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
 
   if (!open) return null;
 
+  if (minimized && mobile) {
+    return (
+      <button
+        type="button"
+        onClick={() => setMinimized(false)}
+        aria-label={t.expand}
+        className="fixed bottom-4 right-4 z-50 flex h-12 items-center gap-2 rounded-full bg-primary px-4 text-primary-foreground shadow-lg shadow-primary/30 transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <MessageCircle className="h-5 w-5" />
+        <span className="text-sm font-medium">{t.title}</span>
+        <Plus className="h-4 w-4" />
+      </button>
+    );
+  }
+
   return (
     <div
       role="dialog"

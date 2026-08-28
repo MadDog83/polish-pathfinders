@@ -42,34 +42,41 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
   const [input, setInput] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [revealed, setRevealed] = useState(false);
+  const [thinking, setThinking] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const historyRef = useRef<{ role: "user" | "assistant"; content: string }[]>([]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, showForm, revealed]);
+  }, [messages, showForm, revealed, thinking]);
 
-  const send = () => {
+  const send = async () => {
     const text = input.trim();
-    if (!text) return;
+    if (!text || thinking) return;
     setInput("");
     setMessages((m) => [...m, { role: "user", kind: "text", text }]);
-    const idx = matchFaq(locale, text);
-    setTimeout(() => {
-      if (idx !== null) {
-        const item = getDict(locale).faq.items[idx];
-        setMessages((m) => [
-          ...m,
-          { role: "bot", kind: "text", text: item.a },
-          { role: "bot", kind: "links" },
-        ]);
-      } else {
-        setMessages((m) => [
-          ...m,
-          { role: "bot", kind: "text", text: t.noMatch },
-          { role: "bot", kind: "links" },
-        ]);
-      }
-    }, 250);
+    historyRef.current = [...historyRef.current, { role: "user", content: text }].slice(-12);
+    setThinking(true);
+    try {
+      const res = await askAssistant({ data: { messages: historyRef.current } });
+      historyRef.current = [...historyRef.current, { role: "assistant", content: res.text }].slice(-12);
+      setMessages((m) => [
+        ...m,
+        { role: "bot", kind: "text", text: res.text },
+        { role: "bot", kind: "links" },
+      ]);
+    } catch (err) {
+      console.error(err);
+      const idx = matchFaq(locale, text);
+      const fallback = idx !== null ? getDict(locale).faq.items[idx].a : t.noMatch;
+      setMessages((m) => [
+        ...m,
+        { role: "bot", kind: "text", text: fallback },
+        { role: "bot", kind: "links" },
+      ]);
+    } finally {
+      setThinking(false);
+    }
   };
 
   if (!open) return null;

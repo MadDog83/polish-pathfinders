@@ -55,11 +55,11 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
     if (!text || thinking) return;
     setInput("");
     setMessages((m) => [...m, { role: "user", kind: "text", text }]);
-    historyRef.current = [...historyRef.current, { role: "user", content: text }].slice(-12);
+    historyRef.current = [...historyRef.current, { role: "user" as const, content: text }].slice(-12);
     setThinking(true);
     try {
       const res = await askAssistant({ data: { messages: historyRef.current } });
-      historyRef.current = [...historyRef.current, { role: "assistant", content: res.text }].slice(-12);
+      historyRef.current = [...historyRef.current, { role: "assistant" as const, content: res.text }].slice(-12);
       setMessages((m) => [
         ...m,
         { role: "bot", kind: "text", text: res.text },

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { X, Send, ExternalLink, Bot, User, Minus, GripHorizontal, Plus } from "lucide-react";
+import { X, Send, ExternalLink, Bot, User, Minus, GripHorizontal, Plus, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

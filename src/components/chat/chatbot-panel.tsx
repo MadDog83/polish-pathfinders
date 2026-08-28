@@ -115,6 +115,10 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
       role="dialog"
       aria-label={t.title}
       style={{ transform: `translate(${offset.x}px, ${offset.y}px)` }}
+      onPointerDown={onDragStart}
+      onPointerMove={onDragMove}
+      onPointerUp={onDragEnd}
+      onPointerCancel={onDragEnd}
       className={`fixed bottom-5 right-5 z-50 flex w-[min(400px,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl ${
         minimized ? "h-auto" : "h-[min(640px,90vh)]"
       }`}

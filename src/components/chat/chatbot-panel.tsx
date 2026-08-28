@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { X, Send, ExternalLink, Bot, User, Minus, GripHorizontal } from "lucide-react";
+import { X, Send, ExternalLink, Bot, User, Minus, GripHorizontal, Plus, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +16,7 @@ import { getDict, TELEGRAM_URL, CONTACT_EMAIL, CONTACT_PHONE } from "@/i18n";
 import { matchFaq } from "@/components/chat/kb";
 import { submitLead } from "@/lib/leads.functions";
 import { askAssistant } from "@/lib/chat.functions";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type Msg =
   | { role: "bot"; kind: "text"; text: string }
@@ -45,6 +46,10 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [minimized, setMinimized] = useState(false);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const isMobile = useIsMobile();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const mobile = mounted ? isMobile : typeof window !== "undefined" ? window.innerWidth < 768 : false;
   const dragRef = useRef<{ startX: number; startY: number; baseX: number; baseY: number } | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -109,6 +114,21 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
 
 
   if (!open) return null;
+
+  if (minimized && mobile) {
+    return (
+      <button
+        type="button"
+        onClick={() => setMinimized(false)}
+        aria-label={t.expand}
+        className="fixed bottom-4 right-4 z-50 flex h-12 items-center gap-2 rounded-full bg-primary px-4 text-primary-foreground shadow-lg shadow-primary/30 transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <MessageCircle className="h-5 w-5" />
+        <span className="text-sm font-medium">{t.title}</span>
+        <Plus className="h-4 w-4" />
+      </button>
+    );
+  }
 
   return (
     <div

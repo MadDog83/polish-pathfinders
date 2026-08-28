@@ -25,26 +25,48 @@ export const askAssistant = createServerFn({ method: "POST" })
     const history = data.messages.slice(-8);
     const lastUser = [...history].reverse().find((m) => m.role === "user")?.content ?? "";
 
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: "openai/gpt-oss-120b",
-        temperature: 0.2,
-        max_tokens: 700,
-        messages: [{ role: "system", content: buildSystemPrompt(lastUser) }, ...history],
-      }),
+    const body = JSON.stringify({
+      model: "openai/gpt-oss-120b",
+      temperature: 0.2,
+      max_tokens: 700,
+      messages: [{ role: "system", content: buildSystemPrompt(lastUser) }, ...history],
     });
 
+    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-    if (!res.ok) {
-      const detail = await res.text();
-      console.error("Groq error", res.status, detail);
-      throw new Error(`Assistant unavailable (${res.status})`);
+    let res: Response | undefined;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body,
+      });
+
+      if (res.ok) break;
+      // Retry only transient failures (rate limit / upstream errors).
+      if (res.status !== 429 && res.status < 500) break;
+      if (attempt === 2) break;
+
+      const retryAfter = Number(res.headers.get("retry-after"));
+      const waitMs = Number.isFinite(retryAfter) && retryAfter > 0
+        ? Math.min(retryAfter * 1000, 8000)
+        : 1000 * 2 ** attempt + Math.floor(Math.random() * 300);
+      await sleep(waitMs);
     }
+
+    if (!res || !res.ok) {
+      const status = res?.status ?? 0;
+      const detail = res ? await res.text() : "no response";
+      console.error("Groq error", status, detail);
+      if (status === 429) {
+        throw new Error("RATE_LIMITED");
+      }
+      throw new Error(`Assistant unavailable (${status})`);
+    }
+
 
     const json = (await res.json()) as {
       choices?: { message?: { content?: string } }[];

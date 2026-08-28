@@ -151,8 +151,9 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
               onChange={(e) => setInput(e.target.value)}
               placeholder={t.placeholder}
               aria-label={t.placeholder}
+              disabled={thinking}
             />
-            <Button type="submit" size="icon" aria-label={t.send}>
+            <Button type="submit" size="icon" aria-label={t.send} disabled={thinking}>
               <Send className="h-4 w-4" />
             </Button>
           </form>

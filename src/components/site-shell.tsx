@@ -137,7 +137,7 @@ function LangLinks() {
   return (
     <span className="inline-flex gap-3">
       {LOCALES.map((l) => (
-        <Link key={l} to={l === DEFAULT_LOCALE ? "/" : `/${l}`} className="hover:text-foreground" aria-current={localeFromPath(pathname) === l}>
+        <Link key={l} to={l === "en" ? "/en" : l === "pl" ? "/pl" : "/"} className="hover:text-foreground" aria-current={localeFromPath(pathname) === l}>
           {l.toUpperCase()}
         </Link>
       ))}

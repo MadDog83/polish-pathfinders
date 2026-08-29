@@ -28,6 +28,7 @@ const OFFICIAL = {
   application: "https://mos.cudzoziemcy.gov.pl",
   status: "https://inpol.mazowieckie.pl",
   general: "https://www.gov.pl/web/udsc",
+  wsc: "https://migrant.wsc.mazowieckie.pl/komunikaty",
 };
 
 export interface ChatbotPanelProps {
@@ -232,6 +233,7 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
         <a className="inline-flex items-center gap-1 text-primary underline" href={OFFICIAL.application} target="_blank" rel="noreferrer">MOS <ExternalLink className="h-3 w-3" /></a>
         <a className="inline-flex items-center gap-1 text-primary underline" href={OFFICIAL.status} target="_blank" rel="noreferrer">inPOL <ExternalLink className="h-3 w-3" /></a>
         <a className="inline-flex items-center gap-1 text-primary underline" href={OFFICIAL.general} target="_blank" rel="noreferrer">gov.pl/UDSC <ExternalLink className="h-3 w-3" /></a>
+        <a className="inline-flex items-center gap-1 text-primary underline" href={OFFICIAL.wsc} target="_blank" rel="noreferrer">WSC <ExternalLink className="h-3 w-3" /></a>
       </div>
 
       {!showForm && !revealed && (

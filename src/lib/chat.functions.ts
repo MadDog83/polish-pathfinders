@@ -26,9 +26,18 @@ export const askAssistant = createServerFn({ method: "POST" })
     const lastUser = [...history].reverse().find((m) => m.role === "user")?.content ?? "";
 
     const body = JSON.stringify({
-      model: "openai/gpt-oss-120b",
+      model: "groq/compound-mini",
       temperature: 0.2,
       max_tokens: 1200,
+      search_settings: {
+        include_domains: [
+          "www.gov.pl",
+          "*.gov.pl",
+          "mos.cudzoziemcy.gov.pl",
+          "migrant.wsc.mazowieckie.pl",
+          "isap.sejm.gov.pl",
+        ],
+      },
       messages: [{ role: "system", content: buildSystemPrompt(lastUser) }, ...history],
     });
 

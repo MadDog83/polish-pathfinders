@@ -367,7 +367,6 @@ function LeadForm({ onDone, onBack, onClose, initialService }: { onDone: () => v
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    return;
     setError(null);
     if (!name.trim()) return setError(t.validationName);
     if (!email.trim() && !phone.trim()) return setError(t.validationEmailOrPhone);

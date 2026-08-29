@@ -74,10 +74,10 @@ export const askAssistant = createServerFn({ method: "POST" })
         });
 
         if (res.ok) break outer;
-        // Retry only transient failures (rate limit / upstream errors).
-        if (res.status !== 429 && res.status < 500) break outer;
-        // Quota exhaustion on this model: move on to the fallback model.
-        if (res.status === 429) break;
+        // Payload too large or rate-limited: this model can't serve the request right now, move to the fallback model.
+        if (res.status === 413 || res.status === 429) break;
+        // Any other non-retryable client error: no point trying the fallback, give up.
+        if (res.status < 500) break outer;
         if (attempt === 2) break;
 
         const retryAfter = Number(res.headers.get("retry-after"));

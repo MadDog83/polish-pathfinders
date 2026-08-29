@@ -1,9 +1,11 @@
 import { LEGAL_KNOWLEDGE_BASE } from "@/lib/legal-kb.server";
 import { getDict, LOCALES, SITE_NAME } from "@/i18n";
 
-const MAX_SITE_KB_CHARS = 5000;
-const MAX_LEGAL_CHARS = 20000;
-const MAX_LEGAL_BYTES = 15000;
+// groq/compound-mini enforces a small per-request size limit (413 request_too_large),
+// so the prompt budget has to stay well below the previous 20k/15k figures.
+const MAX_SITE_KB_CHARS = 2500;
+const MAX_LEGAL_CHARS = 7000;
+const MAX_LEGAL_BYTES = 5000;
 const ALWAYS_INCLUDE_COUNT = 2; // title/sources block + the permit-types overview, so the assistant keeps baseline knowledge of all residence-permit types even when keyword matching misses the right section for a specific message
 
 function byteLength(text: string): number {

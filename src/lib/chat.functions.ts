@@ -22,7 +22,7 @@ export const askAssistant = createServerFn({ method: "POST" })
     const { buildSystemPrompt } = await import("@/lib/chat-kb.server");
 
     // Keep the payload small: only recent turns + retrieval-narrowed knowledge base.
-    const history = data.messages.slice(-8);
+    const history = data.messages.slice(-4);
     const lastUser = [...history].reverse().find((m) => m.role === "user")?.content ?? "";
 
     const body = JSON.stringify({

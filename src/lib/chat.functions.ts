@@ -25,45 +25,67 @@ export const askAssistant = createServerFn({ method: "POST" })
     const history = data.messages.slice(-8);
     const lastUser = [...history].reverse().find((m) => m.role === "user")?.content ?? "";
 
-    const body = JSON.stringify({
-      model: "groq/compound-mini",
-      temperature: 0.2,
-      max_tokens: 1200,
-      search_settings: {
-        include_domains: [
-          "www.gov.pl",
-          "*.gov.pl",
-          "mos.cudzoziemcy.gov.pl",
-          "migrant.wsc.mazowieckie.pl",
-          "isap.sejm.gov.pl",
-        ],
-      },
-      messages: [{ role: "system", content: buildSystemPrompt(lastUser) }, ...history],
-    });
+    const messages = [
+      { role: "system", content: buildSystemPrompt(lastUser) },
+      ...history,
+    ];
+
+    const buildBody = (model: string, withSearch: boolean) =>
+      JSON.stringify({
+        model,
+        temperature: 0.2,
+        max_tokens: 1200,
+        ...(withSearch
+          ? {
+              search_settings: {
+                include_domains: [
+                  "www.gov.pl",
+                  "*.gov.pl",
+                  "mos.cudzoziemcy.gov.pl",
+                  "migrant.wsc.mazowieckie.pl",
+                  "isap.sejm.gov.pl",
+                ],
+              },
+            }
+          : {}),
+        messages,
+      });
+
+    // Primary model adds live official-source search; the fallback has a separate
+    // quota, so a rate-limited primary still gets an answer instead of an error.
+    const candidates: { model: string; withSearch: boolean }[] = [
+      { model: "groq/compound-mini", withSearch: true },
+      { model: "openai/gpt-oss-120b", withSearch: false },
+    ];
 
     const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
     let res: Response | undefined;
-    for (let attempt = 0; attempt < 3; attempt++) {
-      res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body,
-      });
+    outer: for (const candidate of candidates) {
+      const body = buildBody(candidate.model, candidate.withSearch);
+      for (let attempt = 0; attempt < 3; attempt++) {
+        res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body,
+        });
 
-      if (res.ok) break;
-      // Retry only transient failures (rate limit / upstream errors).
-      if (res.status !== 429 && res.status < 500) break;
-      if (attempt === 2) break;
+        if (res.ok) break outer;
+        // Retry only transient failures (rate limit / upstream errors).
+        if (res.status !== 429 && res.status < 500) break outer;
+        // Quota exhaustion on this model: move on to the fallback model.
+        if (res.status === 429) break;
+        if (attempt === 2) break;
 
-      const retryAfter = Number(res.headers.get("retry-after"));
-      const waitMs = Number.isFinite(retryAfter) && retryAfter > 0
-        ? Math.min(retryAfter * 1000, 8000)
-        : 1000 * 2 ** attempt + Math.floor(Math.random() * 300);
-      await sleep(waitMs);
+        const retryAfter = Number(res.headers.get("retry-after"));
+        const waitMs = Number.isFinite(retryAfter) && retryAfter > 0
+          ? Math.min(retryAfter * 1000, 8000)
+          : 1000 * 2 ** attempt + Math.floor(Math.random() * 300);
+        await sleep(waitMs);
+      }
     }
 
     if (!res || !res.ok) {

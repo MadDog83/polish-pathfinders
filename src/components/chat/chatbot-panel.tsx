@@ -32,6 +32,14 @@ const OFFICIAL = {
   wsc: "https://migrant.wsc.mazowieckie.pl/komunikaty",
 };
 
+const RATE_LIMIT_TEXT: Record<string, string> = {
+  uk: "Зараз надто багато запитів до помічника. Спробуйте, будь ласка, за хвилину.",
+  pl: "Zbyt wiele zapytań do asystenta w tej chwili. Spróbuj ponownie za minutę.",
+  en: "Too many requests to the assistant right now. Please try again in a minute.",
+};
+
+
+
 export interface ChatbotPanelProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;

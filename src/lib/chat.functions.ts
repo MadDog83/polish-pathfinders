@@ -38,7 +38,7 @@ const LAW_LINKS: Record<string, { url: string; label: string }> = {
 const BASE_ACT_ID = "DU/2013/1650"; // ustawa o cudzoziemcach
 const CATALOGUE_FROM = "2025-07-01"; // only acts announced from H2 2025 on
 const KB_COVERAGE_DATE = "2026-02-25"; // how current the curated legal knowledge base is
-const CATALOGUE_MAX = 18;
+const CATALOGUE_MAX = 8;
 
 type EliRef = { id?: string; art?: string };
 type EliItem = {

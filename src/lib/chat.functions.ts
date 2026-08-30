@@ -146,6 +146,7 @@ export const askAssistant = createServerFn({ method: "POST" })
 
     let res: Response | undefined;
     let text = "";
+    let reasoningFallback = "";
     outer: for (const candidate of candidates) {
       const body = buildBody(candidate.model, candidate.withSearch);
       for (let attempt = 0; attempt < 3; attempt++) {
@@ -163,9 +164,11 @@ export const askAssistant = createServerFn({ method: "POST" })
             choices?: { message?: { content?: string; reasoning?: string } }[];
           };
           const msg = json.choices?.[0]?.message;
-          text = (msg?.content ?? "").trim() || (msg?.reasoning ?? "").trim();
-          // compound models sometimes answer with tool output only; let the fallback model try.
+          text = (msg?.content ?? "").trim();
           if (text) break outer;
+          // Compound models sometimes return tool output only. Remember the raw reasoning
+          // as an absolute last resort, but let the next model produce a real answer first.
+          if (!reasoningFallback) reasoningFallback = (msg?.reasoning ?? "").trim();
           break;
         }
         // Payload too large or rate-limited: this model can't serve the request right now, move to the fallback model.
@@ -181,6 +184,8 @@ export const askAssistant = createServerFn({ method: "POST" })
         await sleep(waitMs);
       }
     }
+
+    if (!text) text = reasoningFallback;
 
     if (!text) {
       const status = res?.status ?? 0;

@@ -96,7 +96,7 @@ function selectLegalBase(query: string): string {
   return picked.map((p) => p.section).join("\n");
 }
 
-export function buildSystemPrompt(query = ""): string {
+export function buildSystemPrompt(query = "", withSearch = true): string {
   return [
     `You are the assistant of "${SITE_NAME}", a service helping foreigners with legalization of stay in Poland (temporary residence card, permanent residence, citizenship, work permits, CUKR).`,
     "CRITICAL LANGUAGE RULE: Always write your entire reply in the exact same language as the user's most recent message (Ukrainian, Polish, or English) — match the user's language, not the language of any text you found in the knowledge base or in search results below (that reference material may be in a different language; translate what you use from it into the user's language). Never mix languages in one reply, never reply in Polish to a Ukrainian message or vice versa, and never mention which language you detected.",

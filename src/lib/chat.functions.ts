@@ -268,7 +268,7 @@ export const askAssistant = createServerFn({ method: "POST" })
     // Only the search-capable model may be told it can search; telling a tool-less
     // model to search makes it emit a tool call that Groq rejects with 400.
     const systemPromptFor = (withSearch: boolean) =>
-      [buildSystemPrompt(lastUser, withSearch), ...extras].join("\n\n");
+      [buildSystemPrompt(lastUser, withSearch, data.locale), ...extras].join("\n\n");
 
     const buildBody = (model: string, withSearch: boolean) =>
       JSON.stringify({

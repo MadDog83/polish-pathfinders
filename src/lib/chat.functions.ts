@@ -130,6 +130,7 @@ function catalogueText(acts: EliAct[]): string {
   return acts
     .map((a) => {
       const bits = [a.eli, [a.type, a.issuer].filter(Boolean).join(" — "), a.title];
+      if (a.date) bits.push(`z dnia ${a.date}`);
       if (a.inForceFrom) bits.push(`w mocy od ${a.inForceFrom}`);
       if (a.basis) bits.push(`podst.: ${a.basis} ustawy o cudzoziemcach`);
       return `- ${bits.join(" | ")}`;
@@ -186,6 +187,13 @@ function sanitizeCitations(text: string, acts: EliAct[] = []): string {
     const d = String(detail).trim();
     const label = `Dz.U. ${act.year} poz. ${act.pos}${d ? `, ${d}` : ""}`;
     return `[${label}](${eliUrl(act.address)})`;
+  });
+
+  // Safety net: the model sometimes copies a catalogue id as plain text instead of using
+  // the marker. Only ids that really exist in the catalogue become links.
+  out = out.replace(/\bDU\/(\d{4})\/(\d+)\b/g, (m, y: string, p: string) => {
+    const act = byEli.get(`DU/${y}/${p}`);
+    return act ? `[Dz.U. ${act.year} poz. ${act.pos}](${eliUrl(act.address)})` : m;
   });
 
   // 4. Restore the parked URLs.
@@ -285,6 +293,11 @@ export const askAssistant = createServerFn({ method: "POST" })
         model,
         temperature: 0.2,
         max_tokens: 1200,
+        // gpt-oss models otherwise spend the whole budget on internal reasoning and
+        // return empty content; the reasoning must also never come back to us at all.
+        ...(model.startsWith("openai/gpt-oss")
+          ? { include_reasoning: false, reasoning_effort: "low" }
+          : {}),
         ...(withSearch
           ? {
               search_settings: {
@@ -320,7 +333,6 @@ export const askAssistant = createServerFn({ method: "POST" })
 
     let res: Response | undefined;
     let text = "";
-    let reasoningFallback = "";
     outer: for (const candidate of candidates) {
       const body = buildBody(candidate.model, candidate.withSearch);
       for (let attempt = 0; attempt < 3; attempt++) {
@@ -335,14 +347,12 @@ export const askAssistant = createServerFn({ method: "POST" })
 
         if (res.ok) {
           const json = (await res.json()) as {
-            choices?: { message?: { content?: string; reasoning?: string } }[];
+            choices?: { message?: { content?: string } }[];
           };
-          const msg = json.choices?.[0]?.message;
-          text = (msg?.content ?? "").trim();
+          text = (json.choices?.[0]?.message?.content ?? "").trim();
           if (text) break outer;
-          // Compound models sometimes return tool output only. Remember the raw reasoning
-          // as an absolute last resort, but let the next model produce a real answer first.
-          if (!reasoningFallback) reasoningFallback = (msg?.reasoning ?? "").trim();
+          // Empty content: let the next model try. Never fall back to the model's raw
+          // reasoning — internal monologue must never reach the user.
           break;
         }
         // Rejected, too large or rate-limited: this model can't serve the request right now, move to the fallback model.
@@ -365,18 +375,17 @@ export const askAssistant = createServerFn({ method: "POST" })
       }
     }
 
-    if (!text) text = reasoningFallback;
-
     if (!text) {
       const status = res?.status ?? 0;
       if (res && !res.ok) {
-        const detail = await res.text();
-        console.error("Groq error", status, detail);
-        if (status === 429) throw new Error("RATE_LIMITED");
-        // Surface the provider's own explanation — otherwise a 400 is undiagnosable from the client.
-        throw new Error(`Assistant unavailable (${status}): ${detail.slice(0, 400)}`);
+        // Provider details stay in the server log; users must never see raw error payloads.
+        console.error("Groq error", status, await res.text());
+        throw new Error(status === 429 ? "RATE_LIMITED" : `Assistant unavailable (${status})`);
       }
-      throw new Error("Empty assistant response");
+      // Every candidate answered with empty content — for the user this is the same
+      // "busy, try shortly" situation, so reuse that friendly message.
+      console.error("Groq returned empty content from every candidate model");
+      throw new Error("RATE_LIMITED");
     }
 
     return { text: sanitizeCitations(text, acts) };

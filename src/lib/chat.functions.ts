@@ -129,7 +129,7 @@ async function getEliActs(): Promise<EliAct[]> {
 function catalogueText(acts: EliAct[]): string {
   return acts
     .map((a) => {
-      const bits = [a.eli, a.type, a.title];
+      const bits = [a.eli, [a.type, a.issuer].filter(Boolean).join(" — "), a.title];
       if (a.inForceFrom) bits.push(`w mocy od ${a.inForceFrom}`);
       if (a.basis) bits.push(`podst.: ${a.basis} ustawy o cudzoziemcach`);
       return `- ${bits.join(" | ")}`;

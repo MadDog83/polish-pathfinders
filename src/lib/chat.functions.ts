@@ -336,7 +336,13 @@ export const askAssistant = createServerFn({ method: "POST" })
           break;
         }
         // Rejected, too large or rate-limited: this model can't serve the request right now, move to the fallback model.
-        if (res.status === 400 || res.status === 413 || res.status === 429) break;
+        if (res.status === 429) {
+          const after = Number(res.headers.get("retry-after"));
+          const wait = Number.isFinite(after) && after > 0 ? after * 1000 : COOLDOWN_MS;
+          modelCooldown.set(candidate.model, Date.now() + Math.min(wait, 600_000));
+          break;
+        }
+        if (res.status === 400 || res.status === 413) break;
         // Any other non-retryable client error: no point trying the fallback, give up.
         if (res.status < 500) break outer;
         if (attempt === 2) break;

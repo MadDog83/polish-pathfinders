@@ -343,9 +343,11 @@ export const askAssistant = createServerFn({ method: "POST" })
     if (!text) {
       const status = res?.status ?? 0;
       if (res && !res.ok) {
-        console.error("Groq error", status, await res.text());
+        const detail = await res.text();
+        console.error("Groq error", status, detail);
         if (status === 429) throw new Error("RATE_LIMITED");
-        throw new Error(`Assistant unavailable (${status})`);
+        // Surface the provider's own explanation — otherwise a 400 is undiagnosable from the client.
+        throw new Error(`Assistant unavailable (${status}): ${detail.slice(0, 400)}`);
       }
       throw new Error("Empty assistant response");
     }

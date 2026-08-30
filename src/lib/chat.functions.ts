@@ -145,6 +145,7 @@ export const askAssistant = createServerFn({ method: "POST" })
     const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
     let res: Response | undefined;
+    let text = "";
     outer: for (const candidate of candidates) {
       const body = buildBody(candidate.model, candidate.withSearch);
       for (let attempt = 0; attempt < 3; attempt++) {
@@ -157,7 +158,16 @@ export const askAssistant = createServerFn({ method: "POST" })
           body,
         });
 
-        if (res.ok) break outer;
+        if (res.ok) {
+          const json = (await res.json()) as {
+            choices?: { message?: { content?: string; reasoning?: string } }[];
+          };
+          const msg = json.choices?.[0]?.message;
+          text = (msg?.content ?? "").trim() || (msg?.reasoning ?? "").trim();
+          // compound models sometimes answer with tool output only; let the fallback model try.
+          if (text) break outer;
+          break;
+        }
         // Payload too large or rate-limited: this model can't serve the request right now, move to the fallback model.
         if (res.status === 413 || res.status === 429) break;
         // Any other non-retryable client error: no point trying the fallback, give up.
@@ -172,21 +182,16 @@ export const askAssistant = createServerFn({ method: "POST" })
       }
     }
 
-    if (!res || !res.ok) {
+    if (!text) {
       const status = res?.status ?? 0;
-      const detail = res ? await res.text() : "no response";
-      console.error("Groq error", status, detail);
-      if (status === 429) {
-        throw new Error("RATE_LIMITED");
+      if (res && !res.ok) {
+        console.error("Groq error", status, await res.text());
+        if (status === 429) throw new Error("RATE_LIMITED");
+        throw new Error(`Assistant unavailable (${status})`);
       }
-      throw new Error(`Assistant unavailable (${status})`);
+      throw new Error("Empty assistant response");
     }
 
-
-    const json = (await res.json()) as {
-      choices?: { message?: { content?: string } }[];
-    };
-    const text = json.choices?.[0]?.message?.content?.trim();
-    if (!text) throw new Error("Empty assistant response");
     return { text: sanitizeCitations(text) };
   });
+

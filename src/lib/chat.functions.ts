@@ -140,8 +140,8 @@ export const askAssistant = createServerFn({ method: "POST" })
     const candidates: { model: string; withSearch: boolean }[] = [
       { model: "groq/compound-mini", withSearch: true },
       { model: "openai/gpt-oss-120b", withSearch: false },
-      { model: "llama-3.3-70b-versatile", withSearch: false },
-      { model: "llama-3.1-8b-instant", withSearch: false },
+      { model: "openai/gpt-oss-20b", withSearch: false },
+      { model: "qwen/qwen3.8-27b", withSearch: false },
     ];
 
     const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));

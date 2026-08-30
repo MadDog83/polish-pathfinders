@@ -239,32 +239,30 @@ export const askAssistant = createServerFn({ method: "POST" })
     const acts = await getEliActs();
     const stale = staleNotice(acts);
 
-    const blocks: string[] = [buildSystemPrompt(lastUser)];
+    const extras: string[] = [];
 
     if (komunikaty) {
-      blocks.push(
+      extras.push(
         `# АКТУАЛЬНІ ОГОЛОШЕННЯ WSC\n(Raw text in Polish, fetched live from the official WSC announcements page. Reference material ONLY: translate any fact you take from it into the user's language — never switch your reply to Polish just because this block is Polish. When you use it, add the marker [LAW:KOMUNIKATY].)\n${komunikaty}`,
       );
     }
 
     if (stale) {
-      blocks.push(
+      extras.push(
         `# NEWER AMENDMENTS\nThe curated legal knowledge base above reflects the law as of ${KB_COVERAGE_DATE}. These acts amend the ustawa o cudzoziemcach and were published AFTER that date: ${stale}. Whenever your answer touches a rule these could have changed, add one short sentence in the user's language saying that a newer amendment exists (give its date) and that the detail is worth verifying, and cite it with its [ELI:...] marker. Do not guess what they changed — you only know that they exist.`,
       );
     }
 
     if (DOC_QUESTION.test(lastUser) && acts.length) {
-      blocks.push(
+      extras.push(
         `# KATALOG AKTÓW (live official Sejm ELI register, in force, newest first)\n${catalogueText(acts)}\n\nTo point the user at one of these acts, emit its marker exactly as [ELI:DU/2026/553] — the system turns it into a verified clickable link. Never write a Dz.U. number or a URL yourself, and never cite an id that is not in this list. The link opens the act's page on ISAP, where both the original and the consolidated text are available.`,
       );
     }
 
-    const systemPrompt = blocks.join("\n\n");
-
-    const messages = [
-      { role: "system", content: systemPrompt },
-      ...history,
-    ];
+    // Only the search-capable model may be told it can search; telling a tool-less
+    // model to search makes it emit a tool call that Groq rejects with 400.
+    const systemPromptFor = (withSearch: boolean) =>
+      [buildSystemPrompt(lastUser, withSearch), ...extras].join("\n\n");
 
     const buildBody = (model: string, withSearch: boolean) =>
       JSON.stringify({
@@ -284,7 +282,10 @@ export const askAssistant = createServerFn({ method: "POST" })
               },
             }
           : {}),
-        messages,
+        messages: [
+          { role: "system", content: systemPromptFor(withSearch) },
+          ...history,
+        ],
       });
 
     // Primary model adds live official-source search; the fallback has a separate

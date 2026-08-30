@@ -11,6 +11,7 @@ const ChatSchema = z.object({
     )
     .min(1)
     .max(20),
+  locale: z.string().max(5).optional(),
 });
 
 // The ONLY links the assistant may ever surface. Model output can never introduce a URL.
@@ -37,7 +38,7 @@ const LAW_LINKS: Record<string, { url: string; label: string }> = {
 const BASE_ACT_ID = "DU/2013/1650"; // ustawa o cudzoziemcach
 const CATALOGUE_FROM = "2025-07-01"; // only acts announced from H2 2025 on
 const KB_COVERAGE_DATE = "2026-02-25"; // how current the curated legal knowledge base is
-const CATALOGUE_MAX = 18;
+const CATALOGUE_MAX = 8;
 
 type EliRef = { id?: string; art?: string };
 type EliItem = {
@@ -96,7 +97,7 @@ async function getEliActs(): Promise<EliAct[]> {
         return {
           eli: String(it.ELI),
           address: String(it.address),
-          title: String(it.title ?? "").slice(0, 110),
+          title: String(it.title ?? "").slice(0, 80),
           type: String(it.type ?? ""),
           year: Number(it.year ?? 0),
           pos: Number(it.pos ?? 0),
@@ -219,6 +220,11 @@ async function getKomunikaty(): Promise<string> {
   }
 }
 
+// A model that just returned 429 is skipped for a while instead of being hammered again.
+const COOLDOWN_MS = 60_000;
+const modelCooldown = new Map<string, number>();
+const isCooling = (model: string) => (modelCooldown.get(model) ?? 0) > Date.now();
+
 // Date/schedule/announcement questions in Ukrainian, Polish and English.
 const TIME_SENSITIVE =
   /(коли|дата|дати|термін|строк|розклад|субот|оголош|комунікат|черг|найближч|актуальн|kiedy|data|termin|harmonogram|sobot|komunikat|ogłosz|kolejk|najbliższ|aktualn|when|date|deadline|schedule|saturday|announcement|queue|current|latest)/i;
@@ -232,7 +238,7 @@ export const askAssistant = createServerFn({ method: "POST" })
     const { buildSystemPrompt } = await import("@/lib/chat-kb.server");
 
     // Keep the payload small: only recent turns + retrieval-narrowed knowledge base.
-    const history = data.messages.slice(-8);
+    const history = data.messages.slice(-6);
     const lastUser = [...history].reverse().find((m) => m.role === "user")?.content ?? "";
 
     const komunikaty = TIME_SENSITIVE.test(lastUser) ? await getKomunikaty() : "";
@@ -262,7 +268,7 @@ export const askAssistant = createServerFn({ method: "POST" })
     // Only the search-capable model may be told it can search; telling a tool-less
     // model to search makes it emit a tool call that Groq rejects with 400.
     const systemPromptFor = (withSearch: boolean) =>
-      [buildSystemPrompt(lastUser, withSearch), ...extras].join("\n\n");
+      [buildSystemPrompt(lastUser, withSearch, data.locale), ...extras].join("\n\n");
 
     const buildBody = (model: string, withSearch: boolean) =>
       JSON.stringify({
@@ -288,13 +294,17 @@ export const askAssistant = createServerFn({ method: "POST" })
         ],
       });
 
-    // Primary model adds live official-source search; the fallback has a separate
-    // quota, so a rate-limited primary still gets an answer instead of an error.
-    const candidates: { model: string; withSearch: boolean }[] = [
-      { model: "groq/compound-mini", withSearch: true },
+    // compound-mini has only 250 requests/day, so spend it only on questions that
+    // actually need live search. Models cooling down after a 429 are skipped outright.
+    const candidates = [
+      ...(TIME_SENSITIVE.test(lastUser)
+        ? [{ model: "groq/compound-mini", withSearch: true }]
+        : []),
       { model: "openai/gpt-oss-120b", withSearch: false },
       { model: "openai/gpt-oss-20b", withSearch: false },
-    ];
+    ].filter((c) => !isCooling(c.model));
+
+    if (!candidates.length) throw new Error("RATE_LIMITED");
 
     const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -326,7 +336,13 @@ export const askAssistant = createServerFn({ method: "POST" })
           break;
         }
         // Rejected, too large or rate-limited: this model can't serve the request right now, move to the fallback model.
-        if (res.status === 400 || res.status === 413 || res.status === 429) break;
+        if (res.status === 429) {
+          const after = Number(res.headers.get("retry-after"));
+          const wait = Number.isFinite(after) && after > 0 ? after * 1000 : COOLDOWN_MS;
+          modelCooldown.set(candidate.model, Date.now() + Math.min(wait, 600_000));
+          break;
+        }
+        if (res.status === 400 || res.status === 413) break;
         // Any other non-retryable client error: no point trying the fallback, give up.
         if (res.status < 500) break outer;
         if (attempt === 2) break;

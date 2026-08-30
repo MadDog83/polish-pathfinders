@@ -220,6 +220,11 @@ async function getKomunikaty(): Promise<string> {
   }
 }
 
+// A model that just returned 429 is skipped for a while instead of being hammered again.
+const COOLDOWN_MS = 60_000;
+const modelCooldown = new Map<string, number>();
+const isCooling = (model: string) => (modelCooldown.get(model) ?? 0) > Date.now();
+
 // Date/schedule/announcement questions in Ukrainian, Polish and English.
 const TIME_SENSITIVE =
   /(коли|дата|дати|термін|строк|розклад|субот|оголош|комунікат|черг|найближч|актуальн|kiedy|data|termin|harmonogram|sobot|komunikat|ogłosz|kolejk|najbliższ|aktualn|when|date|deadline|schedule|saturday|announcement|queue|current|latest)/i;

@@ -11,6 +11,7 @@ const ChatSchema = z.object({
     )
     .min(1)
     .max(20),
+  locale: z.string().max(5).optional(),
 });
 
 // The ONLY links the assistant may ever surface. Model output can never introduce a URL.

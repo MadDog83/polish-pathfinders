@@ -17,6 +17,7 @@ import { matchFaq } from "@/components/chat/kb";
 import { submitLead } from "@/lib/leads.functions";
 import { askAssistant } from "@/lib/chat.functions";
 import { useIsMobile } from "@/hooks/use-mobile";
+import ReactMarkdown from "react-markdown";
 
 type Msg =
   | { role: "bot"; kind: "text"; text: string }

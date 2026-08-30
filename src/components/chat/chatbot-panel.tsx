@@ -133,15 +133,21 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
     historyRef.current = [...historyRef.current, { role: "user" as const, content: text }].slice(-12);
     setThinking(true);
     try {
-      const res = await askAssistant({ data: { messages: historyRef.current } });
+      const res = await askAssistant({ data: { messages: historyRef.current, locale } });
       historyRef.current = [...historyRef.current, { role: "assistant" as const, content: res.text }].slice(-12);
       setMessages((m) => [...m, { role: "bot", kind: "text", text: res.text }]);
     } catch (err) {
       console.error(err);
-      const idx = matchFaq(locale, text);
-      const fallback = idx !== null ? getDict(locale).faq.items[idx].a : t.noMatch;
+      const rateLimited = err instanceof Error && err.message.includes("RATE_LIMITED");
+      const idx = rateLimited ? null : matchFaq(locale, text);
+      const fallback = rateLimited
+        ? RATE_LIMIT_TEXT[locale] ?? RATE_LIMIT_TEXT.en
+        : idx !== null
+          ? getDict(locale).faq.items[idx].a
+          : t.noMatch;
       setMessages((m) => [...m, { role: "bot", kind: "text", text: fallback }]);
     } finally {
+
       setThinking(false);
     }
   };

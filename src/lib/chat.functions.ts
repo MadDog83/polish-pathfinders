@@ -51,6 +51,7 @@ type EliItem = {
   announcementDate?: string;
   entryIntoForce?: string;
   inForce?: string;
+  releasedBy?: string[];
   references?: Record<string, EliRef[]>;
 };
 type EliAct = {
@@ -58,6 +59,7 @@ type EliAct = {
   address: string;
   title: string;
   type: string;
+  issuer: string;
   year: number;
   pos: number;
   date: string;
@@ -94,11 +96,19 @@ async function getEliActs(): Promise<EliAct[]> {
       .map((it) => {
         const refs = it.references ?? {};
         const basisArt = (refs["Podstawa prawna z art."] ?? []).find((b) => b?.id === BASE_ACT_ID);
+        // Official titles open with boilerplate ("Rozporządzenie Ministra ... z dnia 10 sierpnia 2026 r.
+        // w sprawie ") that repeats on every act and eats the part that says what the act is about.
+        // The issuing body comes from its own short field instead.
+        const gist = String(it.title ?? "")
+          .replace(/^.*?z dnia \d{1,2} \S+ \d{4} r\.\s*/i, "")
+          .replace(/^w sprawie\s+/i, "")
+          .trim();
         return {
           eli: String(it.ELI),
           address: String(it.address),
-          title: String(it.title ?? "").slice(0, 80),
+          title: (gist || String(it.title ?? "")).slice(0, 110),
           type: String(it.type ?? ""),
+          issuer: (it.releasedBy ?? [])[0] ?? "",
           year: Number(it.year ?? 0),
           pos: Number(it.pos ?? 0),
           date: String(it.announcementDate ?? ""),
@@ -119,7 +129,7 @@ async function getEliActs(): Promise<EliAct[]> {
 function catalogueText(acts: EliAct[]): string {
   return acts
     .map((a) => {
-      const bits = [a.eli, a.type, a.title];
+      const bits = [a.eli, [a.type, a.issuer].filter(Boolean).join(" — "), a.title];
       if (a.inForceFrom) bits.push(`w mocy od ${a.inForceFrom}`);
       if (a.basis) bits.push(`podst.: ${a.basis} ustawy o cudzoziemcach`);
       return `- ${bits.join(" | ")}`;

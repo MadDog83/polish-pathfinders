@@ -51,6 +51,7 @@ type EliItem = {
   announcementDate?: string;
   entryIntoForce?: string;
   inForce?: string;
+  releasedBy?: string[];
   references?: Record<string, EliRef[]>;
 };
 type EliAct = {
@@ -58,6 +59,7 @@ type EliAct = {
   address: string;
   title: string;
   type: string;
+  issuer: string;
   year: number;
   pos: number;
   date: string;

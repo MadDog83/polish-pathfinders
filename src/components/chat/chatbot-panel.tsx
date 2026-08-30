@@ -341,12 +341,18 @@ function MessageBubble({ m, t }: { m: Msg; t: ReturnType<typeof getDict>["chatbo
     );
   }
   return (
-    <div className="flex gap-2">
-      <div className="mt-0.5 grid h-6 w-6 place-items-center rounded-full bg-accent text-accent-foreground">
+    <div className="flex min-w-0 gap-2">
+      <div className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent text-accent-foreground">
         <Bot className="h-3.5 w-3.5" />
       </div>
-      <div className="max-w-[85%] whitespace-pre-wrap rounded-lg rounded-tl-sm bg-muted px-3 py-2 text-sm">
-        {m.kind === "intro" ? `${t.subtitle} — ${t.disclaimer}` : m.text}
+      <div className="min-w-0 max-w-[85%] overflow-hidden rounded-lg rounded-tl-sm bg-muted px-3 py-2 text-sm [overflow-wrap:anywhere] break-words">
+        {m.kind === "intro" ? (
+          `${t.subtitle} — ${t.disclaimer}`
+        ) : (
+          <div className="space-y-2 [&_a]:break-all [&_a]:text-primary [&_a]:underline [&_li]:ml-4 [&_li]:list-disc [&_strong]:font-semibold">
+            <ReactMarkdown>{m.text}</ReactMarkdown>
+          </div>
+        )}
       </div>
     </div>
   );

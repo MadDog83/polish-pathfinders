@@ -97,7 +97,7 @@ async function getEliActs(): Promise<EliAct[]> {
         return {
           eli: String(it.ELI),
           address: String(it.address),
-          title: String(it.title ?? "").slice(0, 110),
+          title: String(it.title ?? "").slice(0, 80),
           type: String(it.type ?? ""),
           year: Number(it.year ?? 0),
           pos: Number(it.pos ?? 0),

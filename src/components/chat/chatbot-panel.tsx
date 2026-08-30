@@ -301,11 +301,11 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
 function MessageBubble({ m, t }: { m: Msg; t: ReturnType<typeof getDict>["chatbot"] }) {
   if (m.role === "user") {
     return (
-      <div className="flex justify-end gap-2">
-        <div className="max-w-[85%] rounded-lg rounded-tr-sm bg-primary px-3 py-2 text-sm text-primary-foreground">
+      <div className="flex min-w-0 justify-end gap-2">
+        <div className="min-w-0 max-w-[85%] overflow-hidden whitespace-pre-wrap rounded-lg rounded-tr-sm bg-primary px-3 py-2 text-sm text-primary-foreground [overflow-wrap:anywhere] break-words">
           {m.text}
         </div>
-        <div className="mt-0.5 grid h-6 w-6 place-items-center rounded-full bg-muted text-muted-foreground">
+        <div className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground">
           <User className="h-3.5 w-3.5" />
         </div>
       </div>

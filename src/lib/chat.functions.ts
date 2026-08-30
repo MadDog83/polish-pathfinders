@@ -294,13 +294,17 @@ export const askAssistant = createServerFn({ method: "POST" })
         ],
       });
 
-    // Primary model adds live official-source search; the fallback has a separate
-    // quota, so a rate-limited primary still gets an answer instead of an error.
-    const candidates: { model: string; withSearch: boolean }[] = [
-      { model: "groq/compound-mini", withSearch: true },
+    // compound-mini has only 250 requests/day, so spend it only on questions that
+    // actually need live search. Models cooling down after a 429 are skipped outright.
+    const candidates = [
+      ...(TIME_SENSITIVE.test(lastUser)
+        ? [{ model: "groq/compound-mini", withSearch: true }]
+        : []),
       { model: "openai/gpt-oss-120b", withSearch: false },
       { model: "openai/gpt-oss-20b", withSearch: false },
-    ];
+    ].filter((c) => !isCooling(c.model));
+
+    if (!candidates.length) throw new Error("RATE_LIMITED");
 
     const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 

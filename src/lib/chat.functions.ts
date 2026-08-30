@@ -33,26 +33,28 @@ const LAW_LINKS: Record<string, { url: string; label: string }> = {
   },
 };
 
-/** Replaces [LAW:KEY detail] markers with verified links and deletes anything else that looks like a citation. */
+/** Strips every citation the model invented, then inserts our own verified links. Order matters. */
 function sanitizeCitations(text: string): string {
-  let out = text.replace(/\[LAW:([A-Z0-9]+)([^\]]*)\]/g, (_m, key: string, detail: string) => {
+  let out = text;
+
+  // 1. Remove anything citation-like that the MODEL wrote — none of it is verifiable.
+  out = out.replace(/\[([^\]]*)\]\(\s*https?:\/\/[^)]*\)/gi, "$1");
+  out = out.replace(/https?:\/\/[^\s)\]]+/gi, "");
+  out = out.replace(/\bDz\.?\s?U\.?\s?(?:z\s+)?\d{4}\s*(?:r\.)?\s*,?\s*poz\.\s?\d+/gi, "");
+  out = out.replace(/\bWDU\d{6,}\b/gi, "");
+
+  // 2. Only now insert OUR verified links, so the cleanup above can never damage them.
+  out = out.replace(/\[LAW:([A-Z0-9]+)([^\]]*)\]/g, (_m, key: string, detail: string) => {
     const entry = LAW_LINKS[key];
     if (!entry) return "";
     const d = String(detail).trim();
     return `[${d ? `${entry.label}, ${d}` : entry.label}](${entry.url})`;
   });
 
-  // Hand-written journal-of-laws identifiers are frequently invented — drop them.
-  out = out.replace(/\bDz\.?\s?U\.?\s?(?:z\s+)?\d{4}\s*(?:r\.)?\s*,?\s*poz\.\s?\d+/gi, "");
-  out = out.replace(/\bWDU\d{6,}\b/gi, "");
-
-  // Any URL that is not one of the verified ones is removed.
-  const allowed = new Set(Object.values(LAW_LINKS).map((l) => l.url));
-  out = out.replace(/https?:\/\/[^\s)\]]+/gi, (u) => (allowed.has(u) ? u : ""));
-
-  // Tidy up leftovers from the deletions.
+  // 3. Tidy leftovers from the deletions.
   out = out.replace(/\[\s*([^\]]*)\]\(\s*\)/g, "$1");
   out = out.replace(/\(\s*\)/g, "");
+  out = out.replace(/\s+([,.;:])/g, "$1");
   out = out.replace(/[ \t]{2,}/g, " ");
   return out.trim();
 }

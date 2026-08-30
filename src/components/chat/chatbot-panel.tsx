@@ -202,7 +202,7 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
       <>
 
 
-      <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+      <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto overflow-x-hidden px-4 py-4">
         {messages.map((m, i) => (
           <MessageBubble key={i} m={m} t={t} />
         ))}

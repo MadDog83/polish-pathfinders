@@ -29,17 +29,19 @@ function relevance(text: string, words: string[]): number {
   return words.reduce((score, word) => score + (lower.includes(word) ? 1 : 0), 0);
 }
 
-export function buildKnowledgeBase(query = ""): string {
+export function buildKnowledgeBase(query = "", locale?: string): string {
   const words = tokenize(query);
+  const picked = LOCALES.filter((l) => !locale || l === locale);
+  const locales = picked.length ? picked : LOCALES;
   const blocks: { text: string; score: number; index: number }[] = [];
   let index = 0;
-  for (const locale of LOCALES) {
-    const d = getDict(locale);
+  for (const loc of locales) {
+    const d = getDict(loc);
     const services = d.services.items.map((s) => `- ${s.title}: ${s.body}`).join("\n");
-    const serviceText = `### [${locale.toUpperCase()}] Services\n${services}`;
+    const serviceText = `### Services\n${services}`;
     blocks.push({ text: serviceText, score: relevance(serviceText, words), index: index++ });
     for (const item of d.faq.items) {
-      const text = `### [${locale.toUpperCase()}] FAQ\nQ: ${item.q}\nA: ${item.a}`;
+      const text = `### FAQ\nQ: ${item.q}\nA: ${item.a}`;
       blocks.push({ text, score: relevance(text, words), index: index++ });
     }
   }

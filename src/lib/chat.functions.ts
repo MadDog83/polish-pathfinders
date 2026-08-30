@@ -173,8 +173,8 @@ export const askAssistant = createServerFn({ method: "POST" })
           if (!reasoningFallback) reasoningFallback = (msg?.reasoning ?? "").trim();
           break;
         }
-        // Payload too large or rate-limited: this model can't serve the request right now, move to the fallback model.
-        if (res.status === 413 || res.status === 429) break;
+        // Rejected, too large or rate-limited: this model can't serve the request right now, move to the fallback model.
+        if (res.status === 400 || res.status === 413 || res.status === 429) break;
         // Any other non-retryable client error: no point trying the fallback, give up.
         if (res.status < 500) break outer;
         if (attempt === 2) break;

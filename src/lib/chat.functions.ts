@@ -33,25 +33,37 @@ const LAW_LINKS: Record<string, { url: string; label: string }> = {
   },
 };
 
-/** Strips every citation the model invented, then inserts our own verified links. Order matters. */
+/** Strips every citation the model invented, keeps our verified ones, then expands markers. Order matters. */
 function sanitizeCitations(text: string): string {
+  const urls = Object.values(LAW_LINKS).map((l) => l.url);
   let out = text;
 
-  // 1. Remove anything citation-like that the MODEL wrote — none of it is verifiable.
+  // 0. Park verified URLs behind placeholders so the cleanup below cannot touch them
+  //    (the model often copies them verbatim out of the conversation history).
+  urls.forEach((url, i) => {
+    out = out.split(url).join(`@@LAWURL${i}@@`);
+  });
+
+  // 1. Remove everything citation-like that is left — none of it is verifiable.
   out = out.replace(/\[([^\]]*)\]\(\s*https?:\/\/[^)]*\)/gi, "$1");
   out = out.replace(/https?:\/\/[^\s)\]]+/gi, "");
   out = out.replace(/\bDz\.?\s?U\.?\s?(?:z\s+)?\d{4}\s*(?:r\.)?\s*,?\s*poz\.\s?\d+/gi, "");
   out = out.replace(/\bWDU\d{6,}\b/gi, "");
 
-  // 2. Only now insert OUR verified links, so the cleanup above can never damage them.
-  out = out.replace(/\[LAW:([A-Z0-9]+)([^\]]*)\]/g, (_m, key: string, detail: string) => {
+  // 2. Expand our own markers into verified links.
+  out = out.replace(/\[LAW:([A-Z0-9_]+)([^\]]*)\]/g, (_m, key: string, detail: string) => {
     const entry = LAW_LINKS[key];
     if (!entry) return "";
     const d = String(detail).trim();
     return `[${d ? `${entry.label}, ${d}` : entry.label}](${entry.url})`;
   });
 
-  // 3. Tidy leftovers from the deletions.
+  // 3. Restore the parked URLs.
+  urls.forEach((url, i) => {
+    out = out.split(`@@LAWURL${i}@@`).join(url);
+  });
+
+  // 4. Tidy leftovers from the deletions.
   out = out.replace(/\[\s*([^\]]*)\]\(\s*\)/g, "$1");
   out = out.replace(/\(\s*\)/g, "");
   out = out.replace(/\s+([,.;:])/g, "$1");

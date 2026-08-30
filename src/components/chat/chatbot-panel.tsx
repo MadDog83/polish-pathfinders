@@ -17,6 +17,7 @@ import { matchFaq } from "@/components/chat/kb";
 import { submitLead } from "@/lib/leads.functions";
 import { askAssistant } from "@/lib/chat.functions";
 import { useIsMobile } from "@/hooks/use-mobile";
+import ReactMarkdown from "react-markdown";
 
 type Msg =
   | { role: "bot"; kind: "text"; text: string }
@@ -201,7 +202,7 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
       <>
 
 
-      <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+      <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto overflow-x-hidden px-4 py-4">
         {messages.map((m, i) => (
           <MessageBubble key={i} m={m} t={t} />
         ))}
@@ -301,11 +302,11 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
 function MessageBubble({ m, t }: { m: Msg; t: ReturnType<typeof getDict>["chatbot"] }) {
   if (m.role === "user") {
     return (
-      <div className="flex justify-end gap-2">
-        <div className="max-w-[85%] rounded-lg rounded-tr-sm bg-primary px-3 py-2 text-sm text-primary-foreground">
+      <div className="flex min-w-0 justify-end gap-2">
+        <div className="min-w-0 max-w-[85%] overflow-hidden whitespace-pre-wrap rounded-lg rounded-tr-sm bg-primary px-3 py-2 text-sm text-primary-foreground [overflow-wrap:anywhere] break-words">
           {m.text}
         </div>
-        <div className="mt-0.5 grid h-6 w-6 place-items-center rounded-full bg-muted text-muted-foreground">
+        <div className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground">
           <User className="h-3.5 w-3.5" />
         </div>
       </div>
@@ -341,12 +342,18 @@ function MessageBubble({ m, t }: { m: Msg; t: ReturnType<typeof getDict>["chatbo
     );
   }
   return (
-    <div className="flex gap-2">
-      <div className="mt-0.5 grid h-6 w-6 place-items-center rounded-full bg-accent text-accent-foreground">
+    <div className="flex min-w-0 gap-2">
+      <div className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent text-accent-foreground">
         <Bot className="h-3.5 w-3.5" />
       </div>
-      <div className="max-w-[85%] whitespace-pre-wrap rounded-lg rounded-tl-sm bg-muted px-3 py-2 text-sm">
-        {m.kind === "intro" ? `${t.subtitle} — ${t.disclaimer}` : m.text}
+      <div className="min-w-0 max-w-[85%] overflow-hidden rounded-lg rounded-tl-sm bg-muted px-3 py-2 text-sm [overflow-wrap:anywhere] break-words">
+        {m.kind === "intro" ? (
+          `${t.subtitle} — ${t.disclaimer}`
+        ) : (
+          <div className="space-y-2 [&_a]:break-all [&_a]:text-primary [&_a]:underline [&_li]:ml-4 [&_li]:list-disc [&_strong]:font-semibold">
+            <ReactMarkdown>{m.text}</ReactMarkdown>
+          </div>
+        )}
       </div>
     </div>
   );

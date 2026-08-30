@@ -351,7 +351,13 @@ function MessageBubble({ m, t }: { m: Msg; t: ReturnType<typeof getDict>["chatbo
           `${t.subtitle} — ${t.disclaimer}`
         ) : (
           <div className="space-y-2 [&_a]:break-all [&_a]:text-primary [&_a]:underline [&_li]:ml-4 [&_li]:list-disc [&_strong]:font-semibold">
-            <ReactMarkdown>{m.text}</ReactMarkdown>
+            <ReactMarkdown
+              components={{
+                a: ({ node, ...props }) => <a {...props} target="_blank" rel="noreferrer" />,
+              }}
+            >
+              {m.text}
+            </ReactMarkdown>
           </div>
         )}
       </div>

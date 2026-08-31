@@ -247,6 +247,11 @@ const isCooling = (model: string) => (modelCooldown.get(model) ?? 0) > Date.now(
 const TIME_SENSITIVE =
   /(коли|дата|дати|термін|строк|розклад|субот|оголош|комунікат|черг|найближч|актуальн|kiedy|data|termin|harmonogram|sobot|komunikat|ogłosz|kolejk|najbliższ|aktualn|when|date|deadline|schedule|saturday|announcement|queue|current|latest)/i;
 
+// Cost/fee questions in Ukrainian, Polish and English — these deserve live search too,
+// but must NOT pull in the WSC announcements block below (that's for dates/queues, not fees).
+const FEE_QUESTION =
+  /(оплат|вартіст|кошту|ціна|ціну|opłat|koszt|cena|cenę|fee|price|cost)/i;
+
 export const askAssistant = createServerFn({ method: "POST" })
   .inputValidator((data) => ChatSchema.parse(data))
   .handler(async ({ data }) => {
@@ -320,7 +325,7 @@ export const askAssistant = createServerFn({ method: "POST" })
     // compound-mini has only 250 requests/day, so spend it only on questions that
     // actually need live search. Models cooling down after a 429 are skipped outright.
     const candidates = [
-      ...(TIME_SENSITIVE.test(lastUser)
+      ...(TIME_SENSITIVE.test(lastUser) || FEE_QUESTION.test(lastUser)
         ? [{ model: "groq/compound-mini", withSearch: true }]
         : []),
       { model: "openai/gpt-oss-120b", withSearch: false },

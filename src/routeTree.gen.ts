@@ -33,6 +33,7 @@ import { Route as PlNewsSlugRouteImport } from './routes/pl/news/$slug'
 import { Route as EnNewsSlugRouteImport } from './routes/en/news/$slug'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
+import { Route as ApiPublicHooksNewsDigestRouteImport } from './routes/api/public/hooks/news-digest'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -156,6 +157,12 @@ const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
   path: '/.lovable/oauth/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksNewsDigestRoute =
+  ApiPublicHooksNewsDigestRouteImport.update({
+    id: '/api/public/hooks/news-digest',
+    path: '/api/public/hooks/news-digest',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -181,6 +188,7 @@ export interface FileRoutesByFullPath {
   '/pl/news/$slug': typeof PlNewsSlugRoute
   '/en/news/': typeof EnNewsIndexRoute
   '/pl/news/': typeof PlNewsIndexRoute
+  '/api/public/hooks/news-digest': typeof ApiPublicHooksNewsDigestRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -206,6 +214,7 @@ export interface FileRoutesByTo {
   '/pl/news/$slug': typeof PlNewsSlugRoute
   '/en/news': typeof EnNewsIndexRoute
   '/pl/news': typeof PlNewsIndexRoute
+  '/api/public/hooks/news-digest': typeof ApiPublicHooksNewsDigestRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -233,6 +242,7 @@ export interface FileRoutesById {
   '/pl/news/$slug': typeof PlNewsSlugRoute
   '/en/news/': typeof EnNewsIndexRoute
   '/pl/news/': typeof PlNewsIndexRoute
+  '/api/public/hooks/news-digest': typeof ApiPublicHooksNewsDigestRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -260,6 +270,7 @@ export interface FileRouteTypes {
     | '/pl/news/$slug'
     | '/en/news/'
     | '/pl/news/'
+    | '/api/public/hooks/news-digest'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -285,6 +296,7 @@ export interface FileRouteTypes {
     | '/pl/news/$slug'
     | '/en/news'
     | '/pl/news'
+    | '/api/public/hooks/news-digest'
   id:
     | '__root__'
     | '/'
@@ -311,6 +323,7 @@ export interface FileRouteTypes {
     | '/pl/news/$slug'
     | '/en/news/'
     | '/pl/news/'
+    | '/api/public/hooks/news-digest'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -337,6 +350,7 @@ export interface RootRouteChildren {
   PlNewsSlugRoute: typeof PlNewsSlugRoute
   EnNewsIndexRoute: typeof EnNewsIndexRoute
   PlNewsIndexRoute: typeof PlNewsIndexRoute
+  ApiPublicHooksNewsDigestRoute: typeof ApiPublicHooksNewsDigestRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -509,6 +523,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DotlovableOauthConsentRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/news-digest': {
+      id: '/api/public/hooks/news-digest'
+      path: '/api/public/hooks/news-digest'
+      fullPath: '/api/public/hooks/news-digest'
+      preLoaderRoute: typeof ApiPublicHooksNewsDigestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -548,6 +569,7 @@ const rootRouteChildren: RootRouteChildren = {
   PlNewsSlugRoute: PlNewsSlugRoute,
   EnNewsIndexRoute: EnNewsIndexRoute,
   PlNewsIndexRoute: PlNewsIndexRoute,
+  ApiPublicHooksNewsDigestRoute: ApiPublicHooksNewsDigestRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

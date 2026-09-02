@@ -103,6 +103,8 @@ function slugify(input: string): string {
     .slice(0, 90) || "news";
 }
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 type Summary = { title: string; summary: string };
 type LlmResult = Record<"uk" | "pl" | "en", Summary>;
 
@@ -117,7 +119,9 @@ async function summarize(apiKey: string, item: Item, pageText: string): Promise<
     `URL: ${item.url}`,
     item.date ? `DATE: ${item.date}` : "",
     `HEADLINE: ${item.title}`,
-    `PAGE TEXT:\n${(pageText || item.intro).slice(0, 6000)}`,
+    // Kept small on purpose: the Groq tier has a tokens-per-minute budget shared
+    // with the site chatbot, and the announcement gist sits at the top of the page.
+    `PAGE TEXT:\n${(pageText || item.intro).slice(0, 2200)}`,
   ]
     .filter(Boolean)
     .join("\n");
@@ -134,7 +138,7 @@ async function summarize(apiKey: string, item: Item, pageText: string): Promise<
     "uk = Ukrainian, pl = Polish, en = English. Same facts in all three.",
   ].join("\n");
 
-  const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+  const call = () => fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
     signal: AbortSignal.timeout(45_000),
@@ -151,6 +155,16 @@ async function summarize(apiKey: string, item: Item, pageText: string): Promise<
       ],
     }),
   });
+
+  // Bounded backoff: rate limits are transient and the response says how long to wait.
+  let r = await call();
+  for (let attempt = 0; attempt < 2 && r.status === 429; attempt++) {
+    const body = await r.text();
+    console.error(`[news-digest] LLM 429, backing off: ${body.slice(0, 200)}`);
+    const wait = Number(/try again in ([\d.]+)s/i.exec(body)?.[1] ?? 20);
+    await sleep(Math.min(Math.max(wait, 5) * 1000 + 1500, 40_000));
+    r = await call();
+  }
 
   if (r.status === 402 || r.status === 403 || r.status === 401 || r.status === 429) {
     console.error(`[news-digest] LLM blocked ${r.status}: ${(await r.text()).slice(0, 400)}`);
@@ -305,6 +319,8 @@ export const Route = createFileRoute("/api/public/hooks/news-digest")({
                 }
               }
               inserted += 1;
+              // Pace the run so a batch stays inside the tokens-per-minute budget.
+              await sleep(8000);
             } catch (err) {
               if (err instanceof AiBlocked) throw err;
               console.error(`[news-digest] item failed ${item.url}:`, err);

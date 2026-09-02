@@ -17,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -241,6 +242,19 @@ function NewsAdmin({ news, t }: { news: NewsRow[]; t: ReturnType<typeof getDict>
   const delFn = useServerFn(adminDeleteNews);
   const [editing, setEditing] = useState<Partial<NewsRow> | null>(null);
 
+  // Drafts (auto-generated or unpublished) first, then published rows newest-first.
+  const sortedNews = useMemo(
+    () =>
+      [...news].sort((a, b) =>
+        a.is_published === b.is_published
+          ? b.published_at.localeCompare(a.published_at)
+          : a.is_published
+            ? 1
+            : -1,
+      ),
+    [news],
+  );
+
   const save = useMutation({
     mutationFn: (payload: Partial<NewsRow>) =>
       saveFn({
@@ -308,11 +322,16 @@ function NewsAdmin({ news, t }: { news: NewsRow[]; t: ReturnType<typeof getDict>
           <Table>
             <TableHeader><TableRow><TableHead>{t.publishedAt}</TableHead><TableHead>{t.language}</TableHead><TableHead>{t.titleField}</TableHead><TableHead>{t.slug}</TableHead><TableHead></TableHead></TableRow></TableHeader>
             <TableBody>
-              {news.map((n) => (
+              {sortedNews.map((n) => (
                 <TableRow key={n.id}>
                   <TableCell className="text-xs">{n.published_at}</TableCell>
                   <TableCell className="uppercase">{n.language}</TableCell>
-                  <TableCell>{n.title}</TableCell>
+                  <TableCell>
+                    <span className="flex items-center gap-2">
+                      {n.title}
+                      {!n.is_published && <Badge variant="secondary">Draft</Badge>}
+                    </span>
+                  </TableCell>
                   <TableCell className="text-xs text-muted-foreground">{n.slug}</TableCell>
                   <TableCell className="space-x-1 text-right">
                     <Button size="sm" variant="ghost" onClick={() => setEditing(n)}>{t.edit}</Button>

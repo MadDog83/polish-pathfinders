@@ -202,6 +202,18 @@ function sanitizeCitations(text: string, acts: EliAct[] = []): string {
     return act ? `[Dz.U. ${act.year} poz. ${act.pos}](${eliUrl(act.address)})` : m;
   });
 
+  // 3b. Anything still in single square brackets is neither a verified link nor a
+  // recognized marker — the model wrote an ad-hoc citation-style aside that doesn't map
+  // to anything real. Unwrap it to plain text instead of leaking raw brackets to the user.
+  // (Skip brackets immediately followed by "(" — those are the real markdown links built above.)
+  out = out.replace(/\[([^\]]*)\](?!\()/g, "$1");
+
+  // 3c. The model sometimes drops the space around a marker, so the expanded link runs
+  // straight into the surrounding word or the next link ("3-4 tygodniekomunikaty...").
+  // Insert the missing space back.
+  out = out.replace(/([^\s(\[])/g, "$1 [");
+
+
   // 4. Restore the parked URLs.
   urls.forEach((url, i) => {
     out = out.split(`@@LAWURL${i}@@`).join(url);

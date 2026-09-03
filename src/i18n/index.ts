@@ -391,11 +391,10 @@ const EN: Dict = {
     heading: "What we cover",
     items: [
       { title: "Temporary residence card", body: "Deadlines, fees, document set, MOS portal and inPOL case tracking.", faqAnchor: "faq-0" },
-      { title: "Permanent residence", body: "Grounds, required years, fees, and the Polish Card exemption.", faqAnchor: "faq-4" },
-      { title: "Polish citizenship", body: "Recognition by the voivode, language and document requirements.", faqAnchor: "faq-6" },
       { title: "Permanent residence", body: "Grounds, required years, fees, and the Polish Card exemption.", faqAnchor: "faq-3" },
       { title: "Polish citizenship", body: "Recognition by the voivode or granting by the President, language and document requirements.", faqAnchor: "faq-5" },
       { title: "CUKR for Ukrainian citizens", body: "3-year permit, filed online in MOS until 4 March 2027.", faqAnchor: "faq-6" },
+    ],
   howItWorks: {
     heading: "How this site works",
     steps: [

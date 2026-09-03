@@ -20,7 +20,6 @@ const UA = "Mozilla/5.0 (compatible; SmartLegalizationBot/1.0)";
 const MODEL = "openai/gpt-oss-120b";
 
 const UDSC_LIST = "https://www.gov.pl/web/udsc/aktualnosci-udsc";
-const WSC_FEED = "https://migrant.wsc.mazowieckie.pl/pl/komunikaty.xml";
 
 type Item = { title: string; url: string; date: string | null; intro: string };
 
@@ -71,23 +70,6 @@ function parseUdsc(html: string): Item[] {
   return items.filter((i) => i.title.length > 5);
 }
 
-/** WSC announcements RSS feed (same host/fetch pattern the chatbot already uses). */
-function parseWsc(xml: string): Item[] {
-  const items: Item[] = [];
-  for (const m of xml.matchAll(/<item>([\s\S]*?)<\/item>/gi)) {
-    const block = m[1]!;
-    const title = stripTags(/<title>([\s\S]*?)<\/title>/i.exec(block)?.[1] ?? "");
-    const url = stripTags(/<link>([\s\S]*?)<\/link>/i.exec(block)?.[1] ?? "");
-    const pub = /<pubDate>([\s\S]*?)<\/pubDate>/i.exec(block)?.[1];
-    let date: string | null = null;
-    if (pub) {
-      const d = new Date(pub.trim());
-      if (!Number.isNaN(d.getTime())) date = d.toISOString().slice(0, 10);
-    }
-    if (title && url) items.push({ title, url, date, intro: "" });
-  }
-  return items;
-}
 
 function slugify(input: string): string {
   const map: Record<string, string> = {
@@ -252,11 +234,8 @@ export const Route = createFileRoute("/api/public/hooks/news-digest")({
             return Response.json({ error: "GROQ_API_KEY missing" }, { status: 500 });
           }
 
-          const [udscHtml, wscXml] = await Promise.all([fetchText(UDSC_LIST), fetchText(WSC_FEED)]);
-          const candidates: Item[] = [
-            ...(udscHtml ? parseUdsc(udscHtml) : []),
-            ...(wscXml ? parseWsc(wscXml) : []),
-          ];
+          const udscHtml = await fetchText(UDSC_LIST);
+          const candidates: Item[] = udscHtml ? parseUdsc(udscHtml) : [];
           if (!candidates.length) {
             await finish("no items parsed");
             return Response.json({ inserted: 0, note: "no items parsed" });

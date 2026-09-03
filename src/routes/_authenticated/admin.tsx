@@ -241,6 +241,10 @@ function NewsAdmin({ news, t }: { news: NewsRow[]; t: ReturnType<typeof getDict>
   const saveFn = useServerFn(adminSaveNews);
   const delFn = useServerFn(adminDeleteNews);
   const [editing, setEditing] = useState<Partial<NewsRow> | null>(null);
+  const editCardRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (editing) editCardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [editing]);
 
   // Drafts (auto-generated or unpublished) first, then published rows newest-first.
   const sortedNews = useMemo(
@@ -283,7 +287,7 @@ function NewsAdmin({ news, t }: { news: NewsRow[]; t: ReturnType<typeof getDict>
         <Button onClick={() => setEditing({ language: "uk", is_published: true, published_at: new Date().toISOString().slice(0, 10) })}>{t.addNews}</Button>
       </div>
       {editing && (
-        <Card>
+        <Card ref={editCardRef}>
           <CardContent className="space-y-3 pt-6">
             <div className="grid gap-3 md:grid-cols-2">
               <div><Label>{t.slug}</Label><Input value={editing.slug ?? ""} onChange={(e) => setEditing({ ...editing, slug: e.target.value })} /></div>

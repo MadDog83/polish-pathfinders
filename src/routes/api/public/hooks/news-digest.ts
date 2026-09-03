@@ -15,6 +15,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 const JOB_NAME = "news-digest";
 const MAX_ITEMS = 5;
+const MAX_AGE_DAYS = 21;
 const LOCK_MINUTES = 10;
 const UA = "Mozilla/5.0 (compatible; SmartLegalizationBot/1.0)";
 const MODEL = "openai/gpt-oss-120b";
@@ -248,8 +249,10 @@ export const Route = createFileRoute("/api/public/hooks/news-digest")({
           if (existingError) throw new Error(existingError.message);
           const seen = new Set((existing ?? []).map((r) => (r.source_url ?? "").trim()));
 
+          const ageCutoff = Date.now() - MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
           const fresh = candidates
             .filter((i) => !seen.has(i.url.trim()))
+            .filter((i) => i.date && new Date(i.date).getTime() >= ageCutoff)
             .filter((i, idx, arr) => arr.findIndex((o) => o.url === i.url) === idx)
             .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""))
             .slice(0, MAX_ITEMS);

@@ -395,6 +395,7 @@ const EN: Dict = {
       { title: "Polish citizenship", body: "Recognition by the voivode or granting by the President, language and document requirements.", faqAnchor: "faq-5" },
       { title: "CUKR for Ukrainian citizens", body: "3-year permit, filed online in MOS until 4 March 2027.", faqAnchor: "faq-6" },
     ],
+  },
   howItWorks: {
     heading: "How this site works",
     steps: [
@@ -586,6 +587,7 @@ const PL: Dict = {
       { title: "Obywatelstwo polskie", body: "Uznanie przez wojewodę lub nadanie przez Prezydenta, wymagania językowe i dokumentacyjne.", faqAnchor: "faq-5" },
       { title: "CUKR dla obywateli Ukrainy", body: "Zezwolenie na 3 lata, wnioski w portalu MOS do 4 marca 2027.", faqAnchor: "faq-6" },
     ],
+  },
   howItWorks: {
     heading: "Jak to działa",
     steps: [

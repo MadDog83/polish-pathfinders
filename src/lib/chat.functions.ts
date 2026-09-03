@@ -211,7 +211,7 @@ function sanitizeCitations(text: string, acts: EliAct[] = []): string {
   // 3c. The model sometimes drops the space around a marker, so the expanded link runs
   // straight into the surrounding word or the next link ("3-4 tygodniekomunikaty...").
   // Insert the missing space back.
-  out = out.replace(/([^\s(\[])/g, "$1 [");
+  out = out.replace(/([^\s(\[])\[/g, "$1 [");
 
 
   // 4. Restore the parked URLs.

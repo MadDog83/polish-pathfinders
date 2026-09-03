@@ -159,6 +159,12 @@ function sanitizeCitations(text: string, acts: EliAct[] = []): string {
   ];
   let out = text;
 
+  // The model sometimes stylizes our own [LAW:...]/[ELI:...] markers with full-width
+  // brackets (【 】) instead of ASCII ones — normalize before parsing so those markers
+  // still get expanded into real links (or stripped) like normal ones, instead of
+  // leaking through unprocessed.
+  out = out.replace(/[【】]/g, (m) => (m === "【" ? "[" : "]"));
+
   // 0. Park verified URLs behind placeholders so the cleanup below cannot touch them
   //    (the model often copies them verbatim out of the conversation history).
   urls.forEach((url, i) => {

@@ -389,7 +389,6 @@ const EN: Dict = {
   },
   services: {
     heading: "What we cover",
-    items: [
       { title: "Temporary residence card", body: "Deadlines, fees, document set, MOS portal and inPOL case tracking.", faqAnchor: "faq-0" },
       { title: "Permanent residence", body: "Grounds, required years, fees, and the Polish Card exemption.", faqAnchor: "faq-3" },
       { title: "Polish citizenship", body: "Recognition by the voivode or granting by the President, language and document requirements.", faqAnchor: "faq-5" },
@@ -580,15 +579,11 @@ const PL: Dict = {
   },
   services: {
     heading: "Co obejmujemy",
-    items: [
       { title: "Karta pobytu czasowego", body: "Terminy, opłaty, komplet dokumentów, portal MOS i śledzenie w inPOL.", faqAnchor: "faq-0" },
-      { title: "Pobyt stały", body: "Podstawy, wymagane lata pobytu, opłaty i zwolnienia dla Karty Polaka.", faqAnchor: "faq-4" },
-      { title: "Obywatelstwo polskie", body: "Uznanie przez wojewodę, wymagania językowe i dokumentacyjne.", faqAnchor: "faq-6" },
-      { title: "CUKR dla obywateli Ukrainy", body: "Zezwolenie na 3 lata, wnioski w portalu MOS do 4 marca 2027.", faqAnchor: "faq-8" },
-    ],
       { title: "Pobyt stały", body: "Podstawy, wymagane lata, opłaty i zwolnienia dla Karty Polaka.", faqAnchor: "faq-3" },
       { title: "Obywatelstwo polskie", body: "Uznanie przez wojewodę lub nadanie przez Prezydenta, wymagania językowe i dokumentacyjne.", faqAnchor: "faq-5" },
       { title: "CUKR dla obywateli Ukrainy", body: "Zezwolenie na 3 lata, wnioski w portalu MOS do 4 marca 2027.", faqAnchor: "faq-6" },
+    ],
     steps: [
       { title: "1. Wybierz pytanie", body: "Znajdź odpowiedź w FAQ poniżej lub otwórz asystenta w prawym dolnym rogu." },
       { title: "2. Sprawdź źródło", body: "Każda odpowiedź prowadzi do gov.pl, MOS lub inPOL." },

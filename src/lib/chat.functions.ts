@@ -348,6 +348,16 @@ export const askAssistant = createServerFn({ method: "POST" })
     // Keep the payload small: only recent turns + retrieval-narrowed knowledge base.
     const history = data.messages.slice(-6);
     const lastUser = [...history].reverse().find((m) => m.role === "user")?.content ?? "";
+    const label = LANG_LABEL[detectReplyLanguage(lastUser)];
+    const historyWithLangHint = history.map((m, i) =>
+      i === history.length - 1 && m.role === "user"
+        ? {
+            ...m,
+            content: `${m.content}\n\n[SYSTEM: This message is written in ${label}. Your entire reply must be written in ${label} only — never switch languages for any reason, even if the message contains Polish or Ukrainian legal terms, institution names, or proper nouns.]`,
+          }
+        : m,
+    );
+
 
     const komunikaty = TIME_SENSITIVE.test(lastUser) ? await getKomunikaty() : "";
     const acts = await getEliActs();

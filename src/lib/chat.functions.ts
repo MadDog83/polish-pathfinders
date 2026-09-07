@@ -180,6 +180,20 @@ function verifyDetail(detail: string, verified: Set<string>): string {
     .trim();
 }
 
+/** Strips every article reference the curated legal base does not contain, anywhere in the text. */
+function stripUnverifiedArticles(text: string, verified: Set<string>): string {
+  let out = text;
+  const matches = out.match(new RegExp(ART_REF.source, "gi")) ?? [];
+  for (const m of matches) {
+    if (!verified.has(normalizeArt(m))) out = out.split(m).join("");
+  }
+  return out
+    .replace(/\(\s*\)/g, "")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/^[\s,;:.–-]+|[\s,;:–-]+$/g, "")
+    .trim();
+}
+
 /** Strips every citation the model invented, keeps verified ones, then expands markers. Order matters. */
 function sanitizeCitations(
   text: string,
@@ -193,11 +207,16 @@ function sanitizeCitations(
   ];
   let out = text;
 
+  // -1. Any "art. X ust. Y" the curated legal base does not literally contain is a
+  // fabricated pinpoint citation — remove it everywhere, inside markers and in plain prose.
+  out = stripUnverifiedArticles(out, verified);
+
   // The model sometimes stylizes our own [LAW:...]/[ELI:...] markers with full-width
   // brackets (【 】) instead of ASCII ones — normalize before parsing so those markers
   // still get expanded into real links (or stripped) like normal ones, instead of
   // leaking through unprocessed.
   out = out.replace(/[【】]/g, (m) => (m === "【" ? "[" : "]"));
+
 
   // 0. Park verified URLs behind placeholders so the cleanup below cannot touch them
   //    (the model often copies them verbatim out of the conversation history).
@@ -304,6 +323,20 @@ const TIME_SENSITIVE =
 const FEE_QUESTION =
   /(оплат|вартіст|кошту|ціна|ціну|opłat|koszt|cena|cenę|fee|price|cost)/i;
 
+/** Language of the user's current message — drives a per-message reply-language instruction. */
+function detectReplyLanguage(text: string): "uk" | "pl" | "en" {
+  if (/[\u0400-\u04FF]/.test(text)) return "uk";
+  if (/[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/.test(text)) return "pl";
+  return "en";
+}
+
+const LANG_LABEL: Record<"uk" | "pl" | "en", string> = {
+  uk: "Ukrainian",
+  pl: "Polish",
+  en: "English",
+};
+
+
 export const askAssistant = createServerFn({ method: "POST" })
   .inputValidator((data) => ChatSchema.parse(data))
   .handler(async ({ data }) => {
@@ -315,6 +348,16 @@ export const askAssistant = createServerFn({ method: "POST" })
     // Keep the payload small: only recent turns + retrieval-narrowed knowledge base.
     const history = data.messages.slice(-6);
     const lastUser = [...history].reverse().find((m) => m.role === "user")?.content ?? "";
+    const label = LANG_LABEL[detectReplyLanguage(lastUser)];
+    const historyWithLangHint = history.map((m, i) =>
+      i === history.length - 1 && m.role === "user"
+        ? {
+            ...m,
+            content: `${m.content}\n\n[SYSTEM: This message is written in ${label}. Your entire reply must be written in ${label} only — never switch languages for any reason, even if the message contains Polish or Ukrainian legal terms, institution names, or proper nouns.]`,
+          }
+        : m,
+    );
+
 
     const komunikaty = TIME_SENSITIVE.test(lastUser) ? await getKomunikaty() : "";
     const acts = await getEliActs();
@@ -370,7 +413,7 @@ export const askAssistant = createServerFn({ method: "POST" })
           : {}),
         messages: [
           { role: "system", content: systemPromptFor(withSearch) },
-          ...history,
+          ...historyWithLangHint,
         ],
       });
 

@@ -323,6 +323,20 @@ const TIME_SENSITIVE =
 const FEE_QUESTION =
   /(оплат|вартіст|кошту|ціна|ціну|opłat|koszt|cena|cenę|fee|price|cost)/i;
 
+/** Language of the user's current message — drives a per-message reply-language instruction. */
+function detectReplyLanguage(text: string): "uk" | "pl" | "en" {
+  if (/[\u0400-\u04FF]/.test(text)) return "uk";
+  if (/[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/.test(text)) return "pl";
+  return "en";
+}
+
+const LANG_LABEL: Record<"uk" | "pl" | "en", string> = {
+  uk: "Ukrainian",
+  pl: "Polish",
+  en: "English",
+};
+
+
 export const askAssistant = createServerFn({ method: "POST" })
   .inputValidator((data) => ChatSchema.parse(data))
   .handler(async ({ data }) => {

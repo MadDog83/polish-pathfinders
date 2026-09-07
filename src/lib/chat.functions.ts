@@ -180,6 +180,20 @@ function verifyDetail(detail: string, verified: Set<string>): string {
     .trim();
 }
 
+/** Strips every article reference the curated legal base does not contain, anywhere in the text. */
+function stripUnverifiedArticles(text: string, verified: Set<string>): string {
+  let out = text;
+  const matches = out.match(new RegExp(ART_REF.source, "gi")) ?? [];
+  for (const m of matches) {
+    if (!verified.has(normalizeArt(m))) out = out.split(m).join("");
+  }
+  return out
+    .replace(/\(\s*\)/g, "")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/^[\s,;:.–-]+|[\s,;:–-]+$/g, "")
+    .trim();
+}
+
 /** Strips every citation the model invented, keeps verified ones, then expands markers. Order matters. */
 function sanitizeCitations(
   text: string,
@@ -193,11 +207,16 @@ function sanitizeCitations(
   ];
   let out = text;
 
+  // -1. Any "art. X ust. Y" the curated legal base does not literally contain is a
+  // fabricated pinpoint citation — remove it everywhere, inside markers and in plain prose.
+  out = stripUnverifiedArticles(out, verified);
+
   // The model sometimes stylizes our own [LAW:...]/[ELI:...] markers with full-width
   // brackets (【 】) instead of ASCII ones — normalize before parsing so those markers
   // still get expanded into real links (or stripped) like normal ones, instead of
   // leaking through unprocessed.
   out = out.replace(/[【】]/g, (m) => (m === "【" ? "[" : "]"));
+
 
   // 0. Park verified URLs behind placeholders so the cleanup below cannot touch them
   //    (the model often copies them verbatim out of the conversation history).

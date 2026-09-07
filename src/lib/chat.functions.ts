@@ -413,7 +413,7 @@ export const askAssistant = createServerFn({ method: "POST" })
           : {}),
         messages: [
           { role: "system", content: systemPromptFor(withSearch) },
-          ...history,
+          ...historyWithLangHint,
         ],
       });
 

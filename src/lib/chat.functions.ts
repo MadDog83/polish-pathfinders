@@ -181,8 +181,11 @@ function verifyDetail(detail: string, verified: Set<string>): string {
 }
 
 /** Strips every citation the model invented, keeps verified ones, then expands markers. Order matters. */
-function sanitizeCitations(text: string, acts: EliAct[] = [], verified: Set<string> = new Set()): string {
-
+function sanitizeCitations(
+  text: string,
+  acts: EliAct[] = [],
+  verified: Set<string> = new Set(),
+): string {
   const byEli = new Map(acts.map((a) => [a.eli.toUpperCase(), a]));
   const urls = [
     ...Object.values(LAW_LINKS).map((l) => l.url),
@@ -212,7 +215,7 @@ function sanitizeCitations(text: string, acts: EliAct[] = [], verified: Set<stri
   out = out.replace(/\[LAW:([A-Z0-9_]+)([^\]]*)\]/g, (_m, key: string, detail: string) => {
     const entry = LAW_LINKS[key];
     if (!entry) return "";
-    const d = String(detail).trim();
+    const d = verifyDetail(String(detail).trim(), verified);
     return `[${d ? `${entry.label}, ${d}` : entry.label}](${entry.url})`;
   });
 
@@ -221,7 +224,7 @@ function sanitizeCitations(text: string, acts: EliAct[] = [], verified: Set<stri
   out = out.replace(/\[ELI:\s*(DU\/\d{4}\/\d+)([^\]]*)\]/gi, (_m, id: string, detail: string) => {
     const act = byEli.get(String(id).toUpperCase());
     if (!act) return "";
-    const d = String(detail).trim();
+    const d = verifyDetail(String(detail).trim(), verified);
     const label = `Dz.U. ${act.year} poz. ${act.pos}${d ? `, ${d}` : ""}`;
     return `[${label}](${eliUrl(act.address)})`;
   });
@@ -442,5 +445,5 @@ export const askAssistant = createServerFn({ method: "POST" })
       throw new Error("RATE_LIMITED");
     }
 
-    return { text: sanitizeCitations(text, acts) };
+    return { text: sanitizeCitations(text, acts, await getVerifiedArticleRefs()) };
   });

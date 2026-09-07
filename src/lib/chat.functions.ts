@@ -386,7 +386,7 @@ export const askAssistant = createServerFn({ method: "POST" })
     // Only the search-capable model may be told it can search; telling a tool-less
     // model to search makes it emit a tool call that Groq rejects with 400.
     const systemPromptFor = (withSearch: boolean) =>
-      [buildSystemPrompt(lastUser, withSearch, data.locale), ...extras].join("\n\n");
+      [buildSystemPrompt(lastUser, withSearch, detectReplyLanguage(lastUser)), ...extras].join("\n\n");
 
     const buildBody = (model: string, withSearch: boolean) =>
       JSON.stringify({
@@ -417,12 +417,10 @@ export const askAssistant = createServerFn({ method: "POST" })
         ],
       });
 
-    // compound-mini has only 250 requests/day, so spend it only on questions that
-    // actually need live search. Models cooling down after a 429 are skipped outright.
+    // Always try the live-search model first; cooldown/429 handling falls back to the
+    // offline models when compound-mini is unavailable.
     const candidates = [
-      ...(TIME_SENSITIVE.test(lastUser) || FEE_QUESTION.test(lastUser)
-        ? [{ model: "groq/compound-mini", withSearch: true }]
-        : []),
+      { model: "groq/compound-mini", withSearch: true },
       { model: "openai/gpt-oss-120b", withSearch: false },
       { model: "openai/gpt-oss-20b", withSearch: false },
     ].filter((c) => !isCooling(c.model));

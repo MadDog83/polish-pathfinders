@@ -150,8 +150,42 @@ function staleNotice(acts: EliAct[]): string {
 const DOC_QUESTION =
   /(закон|устав|акт|розпоряд|посилан|адрес|джерел|документ|стат|артик|змін|новел|формуляр|заяв|припис|ustaw|akt|rozporz|link|adres|źródł|dokument|artyku|przepis|zmian|nowel|formularz|wniosek|law|act|link|address|source|document|article|amend|form|application)/i;
 
+const ART_REF = /art\.\s?\d+[a-z]?(?:\s+ust\.\s?\d+)?/gi;
+
+const normalizeArt = (s: string) => s.replace(/\s+/g, " ").trim().toLowerCase();
+
+let verifiedArticleRefs: Set<string> | null = null;
+
+/** Every "art. X (ust. Y)" reference that literally appears in the curated legal base. */
+async function getVerifiedArticleRefs(): Promise<Set<string>> {
+  if (verifiedArticleRefs) return verifiedArticleRefs;
+  const { LEGAL_KNOWLEDGE_BASE } = await import("@/lib/legal-kb.server");
+  const set = new Set<string>();
+  for (const m of LEGAL_KNOWLEDGE_BASE.matchAll(ART_REF)) set.add(normalizeArt(m[0]));
+  verifiedArticleRefs = set;
+  return set;
+}
+
+/** Removes an article reference the curated legal base does not contain. */
+function verifyDetail(detail: string, verified: Set<string>): string {
+  let d = detail;
+  const found = d.match(new RegExp(ART_REF.source, "i"));
+  if (found && !verified.has(normalizeArt(found[0]))) {
+    d = d.replace(found[0], "");
+  }
+  return d
+    .replace(/\(\s*\)/g, "")
+    .replace(/\s+/g, " ")
+    .replace(/^[\s,;:.–-]+|[\s,;:–-]+$/g, "")
+    .trim();
+}
+
 /** Strips every citation the model invented, keeps verified ones, then expands markers. Order matters. */
-function sanitizeCitations(text: string, acts: EliAct[] = []): string {
+function sanitizeCitations(
+  text: string,
+  acts: EliAct[] = [],
+  verified: Set<string> = new Set(),
+): string {
   const byEli = new Map(acts.map((a) => [a.eli.toUpperCase(), a]));
   const urls = [
     ...Object.values(LAW_LINKS).map((l) => l.url),
@@ -181,7 +215,7 @@ function sanitizeCitations(text: string, acts: EliAct[] = []): string {
   out = out.replace(/\[LAW:([A-Z0-9_]+)([^\]]*)\]/g, (_m, key: string, detail: string) => {
     const entry = LAW_LINKS[key];
     if (!entry) return "";
-    const d = String(detail).trim();
+    const d = verifyDetail(String(detail).trim(), verified);
     return `[${d ? `${entry.label}, ${d}` : entry.label}](${entry.url})`;
   });
 
@@ -190,7 +224,7 @@ function sanitizeCitations(text: string, acts: EliAct[] = []): string {
   out = out.replace(/\[ELI:\s*(DU\/\d{4}\/\d+)([^\]]*)\]/gi, (_m, id: string, detail: string) => {
     const act = byEli.get(String(id).toUpperCase());
     if (!act) return "";
-    const d = String(detail).trim();
+    const d = verifyDetail(String(detail).trim(), verified);
     const label = `Dz.U. ${act.year} poz. ${act.pos}${d ? `, ${d}` : ""}`;
     return `[${label}](${eliUrl(act.address)})`;
   });
@@ -411,5 +445,5 @@ export const askAssistant = createServerFn({ method: "POST" })
       throw new Error("RATE_LIMITED");
     }
 
-    return { text: sanitizeCitations(text, acts) };
+    return { text: sanitizeCitations(text, acts, await getVerifiedArticleRefs()) };
   });

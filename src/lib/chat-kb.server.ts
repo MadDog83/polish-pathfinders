@@ -4,16 +4,53 @@ import { getDict, LOCALES, SITE_NAME } from "@/i18n";
 // groq/compound-mini enforces a small per-request size limit (413 request_too_large),
 // so the prompt budget has to stay well below the previous 20k/15k figures.
 const MAX_SITE_KB_CHARS = 2500; // now single-language, so ~3x more useful content fits
-const MAX_LEGAL_CHARS = 4000;
-const MAX_LEGAL_BYTES = 3000;
-const ALWAYS_INCLUDE_COUNT = 2; // title/sources block + the permit-types overview, so the assistant keeps baseline knowledge of all residence-permit types even when keyword matching misses the right section for a specific message
+const MAX_LEGAL_CHARS = 8000;
+const MAX_LEGAL_BYTES = 7000;
+const ALWAYS_INCLUDE_COUNT = 1; // title/sources block, so the assistant keeps baseline knowledge of all residence-permit types even when keyword matching misses the right section for a specific message
 
 function byteLength(text: string): number {
   return new TextEncoder().encode(text).length;
 }
 
+const TERM_BRIDGE: Record<string, string[]> = {
+  obywatel: ["громадянств"], citizen: ["громадянств"], naturaliz: ["громадянств"],
+  odwoł: ["оскарж"], appeal: ["оскарж"], skarg: ["оскарж"],
+  odcisk: ["відбитк"], fingerprint: ["відбитк"],
+  stały: ["постійн"], stal: ["постійн"], permanent: ["постійн"],
+  rezydent: ["резидент"], resident: ["резидент"], długotermin: ["резидент"],
+  czasow: ["тимчасов"], temporary: ["тимчасов"],
+  prac: ["робот", "прац"], work: ["робот", "прац"], zatrudni: ["робот"], employ: ["робот"],
+  rodzin: ["сім", "возз'єднан"], family: ["сім", "возз'єднан"], połącz: ["возз'єднан"],
+  student: ["студент", "навчанн"], studi: ["студент", "навчанн"], nauk: ["навчанн"],
+  wiz: ["віз"], visa: ["віз"],
+  dokument: ["документ"], document: ["документ"], paszport: ["паспорт"], passport: ["паспорт"],
+  opłat: ["опłат", "мит"], oplat: ["опłат", "мит"], fee: ["опłат", "мит"],
+  koszt: ["опłат", "мит"], cost: ["опłат", "мит"], cena: ["опłат"], price: ["опłат"],
+  termin: ["строк"], deadline: ["строк"], czas: ["строк"],
+  powrót: ["поверн"], powrot: ["поверн"], return: ["поверн"], wydal: ["поверн"], deport: ["поверн"],
+  zatrzyman: ["затриман"], detention: ["затриман"],
+  pesel: ["PESEL"], ukr: ["UKR", "захист"], ukrai: ["UKR", "захист"],
+  ochron: ["захист"], protection: ["захист"],
+  zmian: ["змін"], change: ["змін"], nowel: ["змін"], amend: ["змін"],
+  małżeń: ["шлюб"], malzen: ["шлюб"], małżon: ["шлюб"], marriage: ["шлюб"], spouse: ["шлюб"],
+  dzieck: ["дитин", "неповнолітн"], child: ["дитин", "неповнолітн"], małolet: ["неповнолітн"],
+  polaka: ["поляка"],
+  ubezpiecz: ["страхуванн"], insurance: ["страхуванн"],
+  dochód: ["дохід"], dochod: ["дохід"], income: ["дохід"],
+  język: ["мов"], jezyk: ["мов"], language: ["мов"],
+  sezon: ["сезонн"], seasonal: ["сезонн"],
+  kontrol: ["контрол"], control: ["контрол"], policj: ["Поліці"], police: ["Поліці"],
+  granic: ["Прикордонн"], border: ["Прикордонн"],
+  wnios: ["заяв"], application: ["заяв"], apply: ["заяв"],
+  wojewod: ["воєвод"], voivode: ["воєвод"],
+  cofni: ["скасуванн"], revoke: ["скасуванн"],
+  humanitar: ["гуманітарн"],
+  uchodź: ["біжен"], uchodz: ["біжен"], refugee: ["біжен"],
+  lat: ["рок"], year: ["рок"],
+};
+
 function tokenize(q: string): string[] {
-  return Array.from(
+  const words = Array.from(
     new Set(
       q
         .toLowerCase()
@@ -22,6 +59,15 @@ function tokenize(q: string): string[] {
         .filter((w) => w.length > 3),
     ),
   );
+  const bridgeStems: string[] = [];
+  for (const w of words) {
+    for (const [key, stems] of Object.entries(TERM_BRIDGE)) {
+      if (w.includes(key.toLowerCase())) {
+        bridgeStems.push(...stems);
+      }
+    }
+  }
+  return Array.from(new Set([...words, ...bridgeStems]));
 }
 
 function relevance(text: string, words: string[]): number {

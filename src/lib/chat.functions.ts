@@ -161,7 +161,11 @@ async function getVerifiedArticleRefs(): Promise<Set<string>> {
   if (verifiedArticleRefs) return verifiedArticleRefs;
   const { LEGAL_KNOWLEDGE_BASE } = await import("@/lib/legal-kb.server");
   const set = new Set<string>();
-  for (const m of LEGAL_KNOWLEDGE_BASE.matchAll(ART_REF)) set.add(normalizeArt(m[0]));
+  for (const m of LEGAL_KNOWLEDGE_BASE.matchAll(ART_REF)) {
+    set.add(normalizeArt(m[0]));
+    const bare = m[0].match(/^art\.\s?\d+[a-z]?/i)?.[0];
+    if (bare) set.add(normalizeArt(bare));
+  }
   verifiedArticleRefs = set;
   return set;
 }
@@ -189,6 +193,7 @@ function stripUnverifiedArticles(text: string, verified: Set<string>): string {
   }
   return out
     .replace(/\(\s*\)/g, "")
+    .replace(/\(\s*(?:§|ust\.)\s*\d+[a-z]?\s*\)/gi, "")
     .replace(/[ \t]{2,}/g, " ")
     .replace(/^[\s,;:.–-]+|[\s,;:–-]+$/g, "")
     .trim();

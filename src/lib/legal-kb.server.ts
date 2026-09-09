@@ -188,6 +188,8 @@ export const LEGAL_KNOWLEDGE_BASE = `# База знань: легалізаці
 
 ## 12. Ukraine-specific: тимчасовий захист (ochrona czasowa), PESEL UKR і "згасання" спецрежиму 2022 року
 
+**Умовність позначень у цьому розділі:** усі номери статей у розділі 12 НЕ належать до ustawy o cudzoziemcach. Номери art. 106, 107, 109a, 109b, 110a–110f, 112a–112c, 113, 113a, 113c — це статті **ustawy z dnia 13 czerwca 2003 r. o udzielaniu cudzoziemcom ochrony na terytorium RP**. Номери art. 4, 20, 24, 25, 26 — це статті **ustawy z dnia 23 stycznia 2026 r. o wygaszeniu rozwiązań** (Dz. U. poz. 203). Цитуючи будь-який із цих номерів, завжди називай відповідну ustawę і ніколи не приписуй їх ustawie o cudzoziemcach.
+
 Це критично важливий блок, оскільки закон від 23.01.2026 (Dz. U. poz. 203) — "закон про згасання рішень, що випливають з ustawy o pomocy obywatelom Ukrainy" — **набрав чинності 5 березня 2026 р.** і кардинально змінює правову базу для громадян України.
 
 ### Що відбулося: перенесення регулювання

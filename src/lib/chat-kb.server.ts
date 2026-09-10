@@ -5,7 +5,7 @@ import { getDict, LOCALES, SITE_NAME } from "@/i18n";
 // so the prompt budget has to stay well below the previous 20k/15k figures.
 const MAX_SITE_KB_CHARS = 5000; // now single-language, so ~3x more useful content fits
 const MAX_LEGAL_CHARS = 8000;
-const MAX_LEGAL_BYTES = 7000;
+const MAX_LEGAL_BYTES = 10000;
 const ALWAYS_INCLUDE_COUNT = 1; // title/sources block, so the assistant keeps baseline knowledge of all residence-permit types even when keyword matching misses the right section for a specific message
 
 function byteLength(text: string): number {

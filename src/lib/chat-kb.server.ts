@@ -70,9 +70,14 @@ function tokenize(q: string): string[] {
   return Array.from(new Set([...words, ...bridgeStems]));
 }
 
+// Ukrainian and Polish inflect heavily, so a whole-word substring test misses the right
+// section ("втрачаю" in the question never matches "втрачає" in the base). Compare stems.
 function relevance(text: string, words: string[]): number {
   const lower = text.toLowerCase();
-  return words.reduce((score, word) => score + (lower.includes(word) ? 1 : 0), 0);
+  return words.reduce((score, word) => {
+    const stem = word.length > 6 ? word.slice(0, 6) : word;
+    return score + (lower.includes(stem) ? 1 : 0);
+  }, 0);
 }
 
 export function buildKnowledgeBase(query = "", locale?: string): string {

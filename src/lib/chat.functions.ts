@@ -262,6 +262,9 @@ function sanitizeCitations(
     return `[${label}](${eliUrl(act.address)})`;
   });
 
+  // Also delete any leftover unbracketed ELI marker so the internal marker syntax never leaks.
+  out = out.replace(/\bELI:\s*DU\/\d{4}\/\d+/gi, "");
+
   // Safety net: the model sometimes copies a catalogue id as plain text instead of using
   // the marker. Only ids that really exist in the catalogue become links.
   out = out.replace(/\bDU\/(\d{4})\/(\d+)\b/g, (m, y: string, p: string) => {

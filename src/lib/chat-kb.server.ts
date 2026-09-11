@@ -117,12 +117,11 @@ function splitSections(text: string): string[] {
 function selectLegalBase(query: string): string {
   const sections = splitSections(LEGAL_KNOWLEDGE_BASE);
   const words = tokenize(query);
-  const scored = sections.map((section, index) => {
-    const lower = section.toLowerCase();
-    let score = 0;
-    for (const w of words) if (lower.includes(w)) score += 1;
-    return { section, index, score };
-  });
+  const scored = sections.map((section, index) => ({
+    section,
+    index,
+    score: relevance(section, words),
+  }));
   scored.sort((a, b) => b.score - a.score || a.index - b.index);
 
   const picked: { section: string; index: number }[] = [];

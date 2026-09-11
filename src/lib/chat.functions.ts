@@ -243,6 +243,15 @@ function sanitizeCitations(
     return `[${d ? `${entry.label}, ${d}` : entry.label}](${entry.url})`;
   });
 
+  // The model sometimes drops the square brackets around its own marker; expand that form
+  // too, so internal marker syntax is never shown to the user.
+  out = out.replace(/\bLAW:([A-Z0-9_]+)((?:\s+art\.\s?\d+[a-z]?(?:\s+ust\.\s?\d+[a-z]?)?)?)/g, (_m, key: string, detail: string) => {
+    const entry = LAW_LINKS[key];
+    if (!entry) return "";
+    const d = verifyDetail(String(detail).trim(), verified);
+    return `[${d ? `${entry.label}, ${d}` : entry.label}](${entry.url})`;
+  });
+
   // 3. Expand catalogue markers — only ids that really exist in the live register survive,
   //    which makes an invented citation structurally impossible.
   out = out.replace(/\[ELI:\s*(DU\/\d{4}\/\d+)([^\]]*)\]/gi, (_m, id: string, detail: string) => {
@@ -252,6 +261,9 @@ function sanitizeCitations(
     const label = `Dz.U. ${act.year} poz. ${act.pos}${d ? `, ${d}` : ""}`;
     return `[${label}](${eliUrl(act.address)})`;
   });
+
+  // Also delete any leftover unbracketed ELI marker so the internal marker syntax never leaks.
+  out = out.replace(/\bELI:\s*DU\/\d{4}\/\d+/gi, "");
 
   // Safety net: the model sometimes copies a catalogue id as plain text instead of using
   // the marker. Only ids that really exist in the catalogue become links.

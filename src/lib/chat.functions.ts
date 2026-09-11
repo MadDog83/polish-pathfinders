@@ -340,10 +340,13 @@ const TIME_SENSITIVE =
 const FEE_QUESTION =
   /(оплат|вартіст|кошту|ціна|ціну|opłat|koszt|cena|cenę|fee|price|cost)/i;
 
+const PL_WORDS = /\b(ile|czy|jak|jaki|jaka|jakie|jakim|jakich|gdzie|kiedy|ktory|ktora|ktore|dla|moge|musze|chce|kosztuje|koszt|cena|wniosek|wniosku|pobyt|pobytu|karta|karty|karte|praca|pracy|dokument|dokumenty|termin|terminie|urzad|wojewoda|wojewody|zezwolenie|zezwolenia|obywatelstwo|obywatelstwa|odwolanie|decyzja|decyzji|jest|sie|nie|tak|oraz|lub|przez|bez|mam|mnie|jestem|trzeba|zlozyc|skladac|dostac|wyjechac|mieszkac|potrzebuje)\b/i;
+
 /** Language of the user's current message — drives a per-message reply-language instruction. */
 function detectReplyLanguage(text: string): "uk" | "pl" | "en" {
   if (/[\u0400-\u04FF]/.test(text)) return "uk";
   if (/[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/.test(text)) return "pl";
+  if (PL_WORDS.test(text)) return "pl";
   return "en";
 }
 

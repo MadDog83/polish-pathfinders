@@ -137,6 +137,9 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
       historyRef.current = [...historyRef.current, { role: "assistant" as const, content: res.text }].slice(-12);
       setMessages((m) => [...m, { role: "bot", kind: "text", text: res.text }]);
     } catch (err) {
+      // The request failed, so this turn has no answer — drop it from the history,
+      // otherwise the next request carries two user questions and both get answered.
+      historyRef.current = historyRef.current.slice(0, -1);
       console.error(err);
       const rateLimited = err instanceof Error && err.message.includes("RATE_LIMITED");
       const idx = rateLimited ? null : matchFaq(locale, text);

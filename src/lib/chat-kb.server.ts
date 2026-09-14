@@ -157,6 +157,17 @@ function selectLegalBase(query: string): string {
     totalBytes += byteLength(sections[i]);
   }
 
+  // Pinned before the budget loop, so the illegal-stay section is always present for a
+  // question about illegal stay even when other sections would have filled the budget.
+  if (HIGH_RISK_QUERY.test(query)) {
+    const riskIndex = sections.findIndex((s) => s.includes("Нелегальне перебування"));
+    if (riskIndex >= 0 && !picked.some((p) => p.index === riskIndex)) {
+      picked.push({ section: sections[riskIndex], index: riskIndex });
+      total += sections[riskIndex].length;
+      totalBytes += byteLength(sections[riskIndex]);
+    }
+  }
+
   for (const item of scored) {
     if (picked.some((p) => p.index === item.index)) continue;
     if (total + item.section.length > MAX_LEGAL_CHARS) continue;

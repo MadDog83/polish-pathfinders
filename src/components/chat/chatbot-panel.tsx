@@ -140,7 +140,9 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
       // The request failed, so this turn has no answer — drop it from the history,
       // otherwise the next request carries two user questions and both get answered.
       historyRef.current = historyRef.current.slice(0, -1);
-      console.error(err);
+      // Prefixed and flattened so the model trace in the error message is readable
+      // straight from the browser console when diagnosing a failed turn.
+      console.error("[assistant]", err instanceof Error ? err.message : err);
       const rateLimited = err instanceof Error && err.message.includes("RATE_LIMITED");
       const idx = rateLimited ? null : matchFaq(locale, text);
       const fallback = rateLimited

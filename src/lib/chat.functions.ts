@@ -439,13 +439,26 @@ export const askAssistant = createServerFn({ method: "POST" })
 
     // Always try the live-search model first; cooldown/429 handling falls back to the
     // offline models when compound-mini is unavailable.
-    const candidates = [
+    const ALL_CANDIDATES = [
       { model: "groq/compound-mini", withSearch: true },
       { model: "openai/gpt-oss-120b", withSearch: false },
       { model: "openai/gpt-oss-20b", withSearch: false },
-    ].filter((c) => !isCooling(c.model));
+    ];
 
-    if (!candidates.length) throw new Error("RATE_LIMITED");
+    // Diagnostic trace: what each model actually did on this request. It is attached to the
+    // thrown error, so a failure can be read off the response instead of being guessed at.
+    const trace: string[] = [];
+    const short = (model: string) => model.split("/").pop() ?? model;
+
+    const candidates = ALL_CANDIDATES.filter((c) => {
+      if (isCooling(c.model)) {
+        trace.push(`${short(c.model)}:cooldown`);
+        return false;
+      }
+      return true;
+    });
+
+    if (!candidates.length) throw new Error(`RATE_LIMITED [${trace.join(", ")}]`);
 
     const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -454,23 +467,38 @@ export const askAssistant = createServerFn({ method: "POST" })
     outer: for (const candidate of candidates) {
       const body = buildBody(candidate.model, candidate.withSearch);
       for (let attempt = 0; attempt < 3; attempt++) {
-        res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${apiKey}`,
-          },
-          body,
-        });
+        try {
+          // Without a deadline a hung upstream request blocks the whole turn and the
+          // fallback models never get a chance — the user just sees the failure message.
+          res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${apiKey}`,
+            },
+            body,
+            signal: AbortSignal.timeout(30_000),
+          });
+        } catch {
+          trace.push(`${short(candidate.model)}:neterr`);
+          res = undefined;
+          if (attempt === 2) break;
+          await sleep(1000 * 2 ** attempt);
+          continue;
+        }
 
         if (res.ok) {
           const json = (await res.json()) as {
             choices?: { message?: { content?: string } }[];
           };
           text = (json.choices?.[0]?.message?.content ?? "").trim();
-          if (text) break outer;
+          if (text) {
+            trace.push(`${short(candidate.model)}:ok`);
+            break outer;
+          }
           // Empty content: let the next model try. Never fall back to the model's raw
           // reasoning — internal monologue must never reach the user.
+          trace.push(`${short(candidate.model)}:empty`);
           break;
         }
         // Rejected, too large or rate-limited: this model can't serve the request right now, move to the fallback model.
@@ -478,12 +506,22 @@ export const askAssistant = createServerFn({ method: "POST" })
           const after = Number(res.headers.get("retry-after"));
           const wait = Number.isFinite(after) && after > 0 ? after * 1000 : COOLDOWN_MS;
           modelCooldown.set(candidate.model, Date.now() + Math.min(wait, 600_000));
+          trace.push(`${short(candidate.model)}:429`);
           break;
         }
-        if (res.status === 400 || res.status === 413) break;
+        if (res.status === 400 || res.status === 413) {
+          trace.push(`${short(candidate.model)}:${res.status}`);
+          break;
+        }
         // Any other non-retryable client error: no point trying the fallback, give up.
-        if (res.status < 500) break outer;
-        if (attempt === 2) break;
+        if (res.status < 500) {
+          trace.push(`${short(candidate.model)}:${res.status}`);
+          break outer;
+        }
+        if (attempt === 2) {
+          trace.push(`${short(candidate.model)}:${res.status}x3`);
+          break;
+        }
 
         const retryAfter = Number(res.headers.get("retry-after"));
         const waitMs = Number.isFinite(retryAfter) && retryAfter > 0
@@ -494,16 +532,20 @@ export const askAssistant = createServerFn({ method: "POST" })
     }
 
     if (!text) {
+      const summary = trace.join(", ") || "no-attempts";
       const status = res?.status ?? 0;
       if (res && !res.ok) {
         // Provider details stay in the server log; users must never see raw error payloads.
-        console.error("Groq error", status, await res.text());
-        throw new Error(status === 429 ? "RATE_LIMITED" : `Assistant unavailable (${status})`);
+        console.error("Groq error", status, summary, await res.text());
+      } else {
+        console.error("Groq produced no usable answer", summary);
       }
-      // Every candidate answered with empty content — for the user this is the same
-      // "busy, try shortly" situation, so reuse that friendly message.
-      console.error("Groq returned empty content from every candidate model");
-      throw new Error("RATE_LIMITED");
+      // For the user this is the same "busy, try shortly" situation whenever every model
+      // was rate-limited, cooling down, silent or unreachable. The bracketed trace says
+      // what actually happened and is what makes these failures diagnosable.
+      const busy =
+        trace.length > 0 && trace.every((t) => /:(429|cooldown|empty|neterr)$/.test(t));
+      throw new Error(`${busy ? "RATE_LIMITED" : "ASSISTANT_FAILED"} [${summary}]`);
     }
 
     return { text: sanitizeCitations(text, acts, await getVerifiedArticleRefs()) };

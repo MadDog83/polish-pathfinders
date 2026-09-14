@@ -80,6 +80,28 @@ function relevance(text: string, words: string[]): number {
   }, 0);
 }
 
+// A stem that occurs in more than half of the sections carries no information: this is a
+// Ukrainian guide about Poland, so "Польщі" is in almost every section and scores the same
+// as the one term that actually identifies the topic. Dropping those filler stems is what
+// stops a question from losing to sections that merely repeat the setting.
+function scoreSections(sections: string[], words: string[]): number[] {
+  const lowers = sections.map((s) => s.toLowerCase());
+  const stems = Array.from(new Set(words.map((w) => (w.length > 6 ? w.slice(0, 6) : w))));
+  const informative = stems.filter((stem) => {
+    const df = lowers.reduce((n, s) => n + (s.includes(stem) ? 1 : 0), 0);
+    return df > 0 && df <= lowers.length / 2;
+  });
+  // If every stem is common, keep them all rather than scoring everything zero.
+  const used = informative.length ? informative : stems;
+  return lowers.map((s) => used.reduce((n, stem) => n + (s.includes(stem) ? 1 : 0), 0));
+}
+
+// A wrong answer about illegal stay can send someone to an office and straight into a
+// return decision, so the section covering it is pinned whenever the question looks like
+// that situation. It must never lose a tie or fall out of the byte budget.
+const HIGH_RISK_QUERY =
+  /(nielegal|bez dokument|przekroczy\w*\s+termin|po terminie|przetermin|wygas\w*\s+(mi\s+)?wiza|zosta\w*\s+d(l|ł)u(z|ż)ej|przeszed\w*\s+granic|przekroczy\w*\s+granic|overstay|expired visa|illegal|нелегал|простроч|протермін|незаконн\w*\s+перетин|без документ)/i;
+
 export function buildKnowledgeBase(query = "", locale?: string): string {
   const words = tokenize(query);
   const picked = LOCALES.filter((l) => !locale || l === locale);
@@ -117,10 +139,11 @@ function splitSections(text: string): string[] {
 function selectLegalBase(query: string): string {
   const sections = splitSections(LEGAL_KNOWLEDGE_BASE);
   const words = tokenize(query);
+  const scores = scoreSections(sections, words);
   const scored = sections.map((section, index) => ({
     section,
     index,
-    score: relevance(section, words),
+    score: scores[index],
   }));
   scored.sort((a, b) => b.score - a.score || a.index - b.index);
 
@@ -132,6 +155,17 @@ function selectLegalBase(query: string): string {
     picked.push({ section: sections[i], index: i });
     total += sections[i].length;
     totalBytes += byteLength(sections[i]);
+  }
+
+  // Pinned before the budget loop, so the illegal-stay section is always present for a
+  // question about illegal stay even when other sections would have filled the budget.
+  if (HIGH_RISK_QUERY.test(query)) {
+    const riskIndex = sections.findIndex((s) => s.includes("Нелегальне перебування"));
+    if (riskIndex >= 0 && !picked.some((p) => p.index === riskIndex)) {
+      picked.push({ section: sections[riskIndex], index: riskIndex });
+      total += sections[riskIndex].length;
+      totalBytes += byteLength(sections[riskIndex]);
+    }
   }
 
   for (const item of scored) {

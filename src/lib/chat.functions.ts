@@ -154,20 +154,30 @@ const ART_REF = /art\.\s?\d+[a-z]?(?:\s+ust\.\s?\d+)?/gi;
 
 const normalizeArt = (s: string) => s.replace(/\s+/g, " ").trim().toLowerCase();
 
-let verifiedArticleRefs: Set<string> | null = null;
-
-/** Every "art. X (ust. Y)" reference that literally appears in the curated legal base. */
-async function getVerifiedArticleRefs(): Promise<Set<string>> {
-  if (verifiedArticleRefs) return verifiedArticleRefs;
-  const { LEGAL_KNOWLEDGE_BASE } = await import("@/lib/legal-kb.server");
+/** Every "art. X (ust. Y)" reference that appears anywhere in the selected legal base. */
+function verifiedRefsFrom(tekst: string): Set<string> {
   const set = new Set<string>();
-  for (const m of LEGAL_KNOWLEDGE_BASE.matchAll(ART_REF)) {
+  for (const m of tekst.matchAll(ART_REF)) {
     set.add(normalizeArt(m[0]));
     const bare = m[0].match(/^art\.\s?\d+[a-z]?/i)?.[0];
     if (bare) set.add(normalizeArt(bare));
   }
-  verifiedArticleRefs = set;
   return set;
+}
+
+/**
+ * Removes articles the selected topics explicitly forbid. This is what makes a rule like
+ * "art. 321 belongs only to the Border Guard chain" enforceable: it stopped being a
+ * sentence in the prompt that the model ignored twice, and became data the code checks.
+ */
+function bezZakazanych(dozwolone: Set<string>, zakazane: Set<string>): Set<string> {
+  if (!zakazane.size) return dozwolone;
+  return new Set(
+    [...dozwolone].filter((ref) => {
+      const nr = ref.match(/^art\.\s?(\d+[a-z]?)/i)?.[1];
+      return !nr || !zakazane.has(nr.toLowerCase());
+    }),
+  );
 }
 
 /** Removes an article reference the curated legal base does not contain. */
@@ -363,7 +373,9 @@ export const askAssistant = createServerFn({ method: "POST" })
     const apiKey = process.env["GROQ_API_KEY"];
     if (!apiKey) throw new Error("GROQ_API_KEY missing");
 
-    const { buildSystemPrompt } = await import("@/lib/chat-kb.server");
+    const { buildSystemPrompt, getLegalIndex, selectLegalSections } = await import(
+      "@/lib/chat-kb.server"
+    );
 
     // Keep the payload small: only recent turns + retrieval-narrowed knowledge base.
     const history = data.messages.slice(-6);
@@ -403,10 +415,20 @@ export const askAssistant = createServerFn({ method: "POST" })
       );
     }
 
+    // Fetched once per request, before the prompt is built, so buildSystemPrompt stays
+    // synchronous and the retry loop below does not have to await anything.
+    const indeks = await getLegalIndex();
+    const wybor = indeks
+      ? selectLegalSections(indeks, lastUser)
+      : { tekst: "", wpisy: [] as { artykuly_zakazane: string[] }[] };
+
     // Only the search-capable model may be told it can search; telling a tool-less
     // model to search makes it emit a tool call that Groq rejects with 400.
     const systemPromptFor = (withSearch: boolean) =>
-      [buildSystemPrompt(lastUser, withSearch, detectReplyLanguage(lastUser)), ...extras].join("\n\n");
+      [
+        buildSystemPrompt(lastUser, withSearch, detectReplyLanguage(lastUser), wybor.tekst),
+        ...extras,
+      ].join("\n\n");
 
     const buildBody = (model: string, withSearch: boolean) =>
       JSON.stringify({
@@ -548,5 +570,9 @@ export const askAssistant = createServerFn({ method: "POST" })
       throw new Error(`${busy ? "RATE_LIMITED" : "ASSISTANT_FAILED"} [${summary}]`);
     }
 
-    return { text: sanitizeCitations(text, acts, await getVerifiedArticleRefs()) };
+    const zakazane = new Set(
+      wybor.wpisy.flatMap((w) => w.artykuly_zakazane || []).map((a) => String(a).toLowerCase()),
+    );
+    const dozwolone = bezZakazanych(verifiedRefsFrom(wybor.tekst), zakazane);
+    return { text: sanitizeCitations(text, acts, dozwolone) };
   });

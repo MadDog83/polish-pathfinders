@@ -1,73 +1,101 @@
-import { LEGAL_KNOWLEDGE_BASE } from "@/lib/legal-kb.server";
 import { getDict, LOCALES, SITE_NAME } from "@/i18n";
 
 // groq/compound-mini enforces a small per-request size limit (413 request_too_large),
 // so the prompt budget has to stay well below the previous 20k/15k figures.
 const MAX_SITE_KB_CHARS = 5000; // now single-language, so ~3x more useful content fits
-const MAX_LEGAL_CHARS = 8000;
 const MAX_LEGAL_BYTES = 7000;
-const ALWAYS_INCLUDE_COUNT = 1; // title/sources block, so the assistant keeps baseline knowledge of all residence-permit types even when keyword matching misses the right section for a specific message
+
+// The legal knowledge base is maintained in its own repository and only READ here, so a
+// change to the law needs a rebuilt index — not a deploy of this app. Each entry is one
+// topic and carries the act its articles belong to, which is what lets the citation
+// verifier check an article against the right act instead of only against a number.
+const INDEX_URL =
+  "https://raw.githubusercontent.com/MadDog83/kb-smartlegal/main/index/kb-index.json";
+const INDEX_TTL_MS = 6 * 60 * 60 * 1000;
+
+export type WpisBazy = {
+  id: string;
+  tytul: string;
+  ustawa: string | null;
+  artykuly: string[];
+  artykuly_zakazane: string[];
+  organ: string | null;
+  ryzyko: string;
+  slowa: string[];
+  tresc: string;
+};
+
+export type IndeksBazy = {
+  wpisy: WpisBazy[];
+  artykulyUstaw: Record<string, string[]>;
+};
+
+let indeksCache: { dane: IndeksBazy; at: number } | null = null;
+
+/** Fetched once and kept in memory; a failed refresh keeps serving the last good copy. */
+export async function getLegalIndex(): Promise<IndeksBazy | null> {
+  const now = Date.now();
+  if (indeksCache && now - indeksCache.at < INDEX_TTL_MS) return indeksCache.dane;
+  try {
+    const r = await fetch(INDEX_URL, {
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!r.ok) return indeksCache?.dane ?? null;
+    const dane = (await r.json()) as IndeksBazy;
+    if (!Array.isArray(dane?.wpisy) || dane.wpisy.length === 0) return indeksCache?.dane ?? null;
+    indeksCache = { dane, at: now };
+    return dane;
+  } catch {
+    return indeksCache?.dane ?? null;
+  }
+}
 
 function byteLength(text: string): number {
   return new TextEncoder().encode(text).length;
 }
 
-const TERM_BRIDGE: Record<string, string[]> = {
-  obywatel: ["громадянств"], citizen: ["громадянств"], naturaliz: ["громадянств"],
-  odwoł: ["оскарж"], appeal: ["оскарж"], skarg: ["оскарж"],
-  odcisk: ["відбитк"], fingerprint: ["відбитк"],
-  stały: ["постійн"], stal: ["постійн"], permanent: ["постійн"],
-  rezydent: ["резидент"], resident: ["резидент"], długotermin: ["резидент"],
-  czasow: ["тимчасов"], temporary: ["тимчасов"],
-  prac: ["робот", "прац"], work: ["робот", "прац"], zatrudni: ["робот"], employ: ["робот"],
-  rodzin: ["сім", "возз'єднан"], family: ["сім", "возз'єднан"], połącz: ["возз'єднан"],
-  student: ["студент", "навчанн"], studi: ["студент", "навчанн"], nauk: ["навчанн"],
-  wiz: ["віз"], visa: ["віз"],
-  dokument: ["документ"], document: ["документ"], paszport: ["паспорт"], passport: ["паспорт"],
-  opłat: ["оплат", "опłат", "мит"], oplat: ["оплат", "опłат", "мит"], fee: ["оплат", "опłат", "мит"],
-  koszt: ["оплат", "опłат", "мит"], cost: ["оплат", "опłат", "мит"], cena: ["оплат", "опłат"], price: ["оплат", "опłат"],
-  termin: ["строк"], deadline: ["строк"], czas: ["строк"],
-  powrót: ["поверн"], powrot: ["поверн"], return: ["поверн"], wydal: ["поверн"], deport: ["поверн"],
-  zatrzyman: ["затриман"], detention: ["затриман"],
-  pesel: ["PESEL"], ukr: ["UKR", "захист"], ukrai: ["UKR", "захист"],
-  ochron: ["захист"], protection: ["захист"],
-  zmian: ["змін"], change: ["змін"], nowel: ["змін"], amend: ["змін"],
-  małżeń: ["шлюб"], malzen: ["шлюб"], małżon: ["шлюб"], marriage: ["шлюб"], spouse: ["шлюб"],
-  dzieck: ["дитин", "неповнолітн"], child: ["дитин", "неповнолітн"], małolet: ["неповнолітн"],
-  polaka: ["поляка"],
-  ubezpiecz: ["страхуванн"], insurance: ["страхуванн"],
-  dochód: ["дохід"], dochod: ["дохід"], income: ["дохід"],
-  język: ["мов"], jezyk: ["мов"], language: ["мов"],
-  sezon: ["сезонн"], seasonal: ["сезонн"],
-  kontrol: ["контрол"], control: ["контрол"], policj: ["Поліці"], police: ["Поліці"],
-  granic: ["Прикордонн"], border: ["Прикордонн"],
-  wnios: ["заяв"], application: ["заяв"], apply: ["заяв"],
-  wojewod: ["воєвод"], voivode: ["воєвод"],
-  cofni: ["скасуванн"], revoke: ["скасуванн"],
-  humanitar: ["гуманітарн"],
-  uchodź: ["біжен"], uchodz: ["біжен"], refugee: ["біжен"],
-  lat: ["рок"], year: ["рок"],
-};
+// The hand-written PL/EN -> UA stem dictionary is gone. Every entry in the base now
+// declares the words it should be found by, in all three languages, so the bridge that
+// guessed at translations is no longer needed.
+
+const bezOgonkow = (s: string): string =>
+  s
+    .replace(/ą/g, "a").replace(/ć/g, "c").replace(/ę/g, "e").replace(/ł/g, "l")
+    .replace(/ń/g, "n").replace(/ó/g, "o").replace(/ś/g, "s")
+    .replace(/ź/g, "z").replace(/ż/g, "z");
+
+// Five characters, not six: six loses the common pair "czekajac" (question) / "czeka"
+// (entry), because the stem "czekaj" does not occur inside "czeka".
+const rdzen = (w: string): string => (w.length > 5 ? w.slice(0, 5) : w);
+
+// Function words of all three languages. Without this list, rarity weighting works
+// backwards: the Ukrainian preposition "для" occurs in only two entries of this
+// Polish-language base, so it looks maximally informative. In testing it outscored the
+// correct answer and additionally triggered the high-risk bonus.
+// Words asking about QUANTITY are deliberately absent: "ile" and "скільки" are part of
+// declared keywords ("ile kosztuje", "скільки коштує") and removing them hurt retrieval.
+const SLOWA_FUNKCYJNE = new Set([
+  "jak", "jaki", "jaka", "jakie", "jakiego", "jakim", "czy", "gdzie", "kiedy",
+  "kto", "cos", "dla", "przy", "pod", "nad", "tak", "ale", "lub", "ten", "tego", "juz",
+  "jeszcze", "byc", "bylo", "bedzie", "trzeba", "moge", "mozna", "mam", "mnie", "chce",
+  "jest", "sie", "nie", "oraz", "przez", "bez", "jestem", "potrzebne", "potrzebuje",
+  "musze", "moj", "moja", "swoje", "teraz", "dalej", "znowu", "bardzo", "tylko",
+  "які", "яка", "яке", "яко", "що", "чи", "де", "коли", "мені", "мене", "для",
+  "при", "про", "від", "над", "під", "так", "але", "або", "цей", "вже", "ще", "бути",
+  "буде", "було", "треба", "можу", "можна", "маю", "має", "хочу", "мій", "моя", "зараз",
+  "how", "what", "when", "where", "which", "who", "why", "the", "and", "for", "with",
+  "from", "about", "can", "may", "must", "need", "does", "did", "are", "was", "were",
+  "will", "would", "should", "you", "your", "this", "that", "long", "many", "much",
+  "take", "get", "have", "has", "there", "then", "still", "now",
+]);
 
 function tokenize(q: string): string[] {
-  const words = Array.from(
-    new Set(
-      q
-        .toLowerCase()
-        .replace(/[^\p{L}\p{N}\s]/gu, " ")
-        .split(/\s+/)
-        .filter((w) => w.length > 3),
-    ),
-  );
-  const bridgeStems: string[] = [];
-  for (const w of words) {
-    for (const [key, stems] of Object.entries(TERM_BRIDGE)) {
-      if (w.includes(key.toLowerCase())) {
-        bridgeStems.push(...stems);
-      }
-    }
-  }
-  return Array.from(new Set([...words, ...bridgeStems]));
+  const slowa = bezOgonkow(String(q).toLowerCase())
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .split(/\s+/)
+    .filter((w) => w.length >= 3 && !SLOWA_FUNKCYJNE.has(w));
+  return Array.from(new Set(slowa.map(rdzen).filter((r) => !SLOWA_FUNKCYJNE.has(r))));
 }
 
 // Ukrainian and Polish inflect heavily, so a whole-word substring test misses the right
@@ -80,27 +108,88 @@ function relevance(text: string, words: string[]): number {
   }, 0);
 }
 
-// A stem that occurs in more than half of the sections carries no information: this is a
-// Ukrainian guide about Poland, so "Польщі" is in almost every section and scores the same
-// as the one term that actually identifies the topic. Dropping those filler stems is what
-// stops a question from losing to sections that merely repeat the setting.
-function scoreSections(sections: string[], words: string[]): number[] {
-  const lowers = sections.map((s) => s.toLowerCase());
-  const stems = Array.from(new Set(words.map((w) => (w.length > 6 ? w.slice(0, 6) : w))));
-  const informative = stems.filter((stem) => {
-    const df = lowers.reduce((n, s) => n + (s.includes(stem) ? 1 : 0), 0);
-    return df > 0 && df <= lowers.length / 2;
-  });
-  // If every stem is common, keep them all rather than scoring everything zero.
-  const used = informative.length ? informative : stems;
-  return lowers.map((s) => used.reduce((n, stem) => n + (s.includes(stem) ? 1 : 0), 0));
+const WAGA_SLOWA = 3; // hit in the entry's declared keywords
+const WAGA_TYTUL = 2; // hit in its title
+const WAGA_TRESC = 1; // hit in its body
+const BONUS_RYZYKO = 5; // a high-risk entry that matches at all must not lose on points
+const PROG_POSPOLITOSCI = 0.5;
+
+/**
+ * A stem's weight depends on how many entries contain it. "Коштує" sits in one entry and
+ * effectively points at the answer; "карта" sits in four and separates almost nothing.
+ * A binary filter did not express that — both counted the same, so the right entry tied
+ * with three others and lost alphabetically. Hence a continuous weight: log(N / df).
+ */
+function wagiRdzeni(wpisy: WpisBazy[], rdzenie: string[]): Map<string, number> {
+  const korpus = wpisy.map((w) =>
+    bezOgonkow(((w.slowa || []).join(" ") + " " + w.tytul + " " + w.tresc).toLowerCase()),
+  );
+  const N = korpus.length || 1;
+  const wagi = new Map<string, number>();
+  for (const r of rdzenie) {
+    const df = korpus.reduce((n, t) => n + (t.includes(r) ? 1 : 0), 0);
+    wagi.set(r, df === 0 || df > N * PROG_POSPOLITOSCI ? 0 : Math.log(N / df));
+  }
+  return wagi;
 }
 
-// A wrong answer about illegal stay can send someone to an office and straight into a
-// return decision, so the section covering it is pinned whenever the question looks like
-// that situation. It must never lose a tie or fall out of the byte budget.
-const HIGH_RISK_QUERY =
-  /(nielegal|bez dokument|przekroczy\w*\s+termin|po terminie|przetermin|wygas\w*\s+(mi\s+)?wiza|zosta\w*\s+d(l|ł)u(z|ż)ej|przeszed\w*\s+granic|przekroczy\w*\s+granic|overstay|expired visa|illegal|нелегал|простроч|протермін|незаконн\w*\s+перетин|без документ)/i;
+/** Picks the entries that answer the question and keeps them inside the payload budget. */
+export function selectLegalSections(
+  indeks: IndeksBazy,
+  query: string,
+  budzetBajtow = MAX_LEGAL_BYTES,
+): { tekst: string; wpisy: WpisBazy[] } {
+  const rdzenie = tokenize(query);
+  const wagi = wagiRdzeni(indeks.wpisy, rdzenie);
+
+  const ocenione = indeks.wpisy
+    .map((wpis) => {
+      const hasla = bezOgonkow((wpis.slowa || []).join(" ").toLowerCase());
+      const tytul = bezOgonkow(String(wpis.tytul || "").toLowerCase());
+      const tresc = bezOgonkow(String(wpis.tresc || "").toLowerCase());
+      let punkty = 0;
+      let trafieniaHasel = 0;
+      for (const r of rdzenie) {
+        const waga = wagi.get(r) || 0;
+        if (waga === 0) continue;
+        if (hasla.includes(r)) {
+          punkty += WAGA_SLOWA * waga;
+          trafieniaHasel++;
+        }
+        if (tytul.includes(r)) punkty += WAGA_TYTUL * waga;
+        if (tresc.includes(r)) punkty += WAGA_TRESC * waga;
+      }
+      // A wrong answer on these topics costs the user the legality of their stay, so an
+      // entry marked high-risk that matches at all gets priority. The data decides this,
+      // not a regex in the code.
+      if (wpis.ryzyko === "wysokie" && trafieniaHasel > 0) punkty += BONUS_RYZYKO;
+      return { wpis, punkty, trafieniaHasel, bajty: byteLength(wpis.tresc) };
+    })
+    .filter((x) => x.punkty > 0)
+    .sort(
+      (a, b) =>
+        b.punkty - a.punkty ||
+        b.trafieniaHasel - a.trafieniaHasel ||
+        a.bajty - b.bajty ||
+        a.wpis.id.localeCompare(b.wpis.id),
+    );
+
+  const wybrane: WpisBazy[] = [];
+  let bajty = 0;
+  for (const x of ocenione) {
+    if (bajty + x.bajty > budzetBajtow) continue;
+    wybrane.push(x.wpis);
+    bajty += x.bajty;
+  }
+
+  // The act name is printed next to the topic, so an article number is never separated
+  // from the act it belongs to.
+  const tekst = wybrane
+    .map((w) => `## ${w.tytul}${w.ustawa ? ` — ${w.ustawa}` : ""}\n${w.tresc}`)
+    .join("\n\n");
+
+  return { tekst, wpisy: wybrane };
+}
 
 export function buildKnowledgeBase(query = "", locale?: string): string {
   const words = tokenize(query);
@@ -130,59 +219,13 @@ export function buildKnowledgeBase(query = "", locale?: string): string {
   return selected.map((block) => block.text).join("\n\n");
 }
 
-function splitSections(text: string): string[] {
-  const parts = text.split(/\n(?=#{1,3} )/g).filter((p) => p.trim().length > 0);
-  return parts.length > 1 ? parts : [text];
-}
 
-/** Keeps only the legal sections relevant to the query so the prompt stays within provider payload limits. */
-function selectLegalBase(query: string): string {
-  const sections = splitSections(LEGAL_KNOWLEDGE_BASE);
-  const words = tokenize(query);
-  const scores = scoreSections(sections, words);
-  const scored = sections.map((section, index) => ({
-    section,
-    index,
-    score: scores[index],
-  }));
-  scored.sort((a, b) => b.score - a.score || a.index - b.index);
-
-  const picked: { section: string; index: number }[] = [];
-  let total = 0;
-  let totalBytes = 0;
-
-  for (let i = 0; i < Math.min(ALWAYS_INCLUDE_COUNT, sections.length); i++) {
-    picked.push({ section: sections[i], index: i });
-    total += sections[i].length;
-    totalBytes += byteLength(sections[i]);
-  }
-
-  // Pinned before the budget loop, so the illegal-stay section is always present for a
-  // question about illegal stay even when other sections would have filled the budget.
-  if (HIGH_RISK_QUERY.test(query)) {
-    const riskIndex = sections.findIndex((s) => s.includes("Нелегальне перебування"));
-    if (riskIndex >= 0 && !picked.some((p) => p.index === riskIndex)) {
-      picked.push({ section: sections[riskIndex], index: riskIndex });
-      total += sections[riskIndex].length;
-      totalBytes += byteLength(sections[riskIndex]);
-    }
-  }
-
-  for (const item of scored) {
-    if (picked.some((p) => p.index === item.index)) continue;
-    if (total + item.section.length > MAX_LEGAL_CHARS) continue;
-    const sectionBytes = byteLength(item.section);
-    if (totalBytes + sectionBytes > MAX_LEGAL_BYTES) continue;
-    picked.push(item);
-    total += item.section.length;
-    totalBytes += sectionBytes;
-    if (total > MAX_LEGAL_CHARS * 0.9) break;
-  }
-  picked.sort((a, b) => a.index - b.index);
-  return picked.map((p) => p.section).join("\n");
-}
-
-export function buildSystemPrompt(query = "", withSearch = true, locale?: string): string {
+export function buildSystemPrompt(
+  query = "",
+  withSearch = true,
+  locale?: string,
+  legalBase = "",
+): string {
   return [
     `You are the assistant of "${SITE_NAME}", helping foreigners legalize their stay in Poland (temporary and permanent residence, citizenship, work permits, CUKR).`,
     `TODAY: the current date is ${new Date().toISOString().slice(0, 10)} (YYYY-MM-DD). Before stating any date or deadline, compare it with today's date. Never describe a date that has already passed as an upcoming deadline, and never tell the user they still have time to do something whose deadline is already behind us — if a deadline in the material above or in a search result is earlier than today, say plainly that it has already passed and explain what that means for the user's situation now. Conversely, never describe a future date as if it had already passed. This matters especially for search results and reference material, which are usually written before the date they discuss and therefore phrase past deadlines in the future tense — the date comparison you make against today always wins over the tense used in the source.`,
@@ -205,8 +248,9 @@ export function buildSystemPrompt(query = "", withSearch = true, locale?: string
     "# KNOWLEDGE BASE",
     buildKnowledgeBase(query, locale),
     "",
-    "# ДОДАТКОВА ПРАВОВА БАЗА (ustawa o cudzoziemcach + поправки 2025/2026, релевантні розділи)",
-    selectLegalBase(query),
+    "# LEGAL BASE (topics selected for this question; each one names the act its articles belong to)",
+    legalBase ||
+      "(The legal base could not be loaded for this request. Do not fill the gap from memory: say plainly which part you cannot confirm and point to the official page.)",
   ].join("\n");
 }
 

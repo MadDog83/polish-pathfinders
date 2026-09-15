@@ -55,62 +55,47 @@ function byteLength(text: string): number {
   return new TextEncoder().encode(text).length;
 }
 
-const TERM_BRIDGE: Record<string, string[]> = {
-  obywatel: ["громадянств"], citizen: ["громадянств"], naturaliz: ["громадянств"],
-  odwoł: ["оскарж"], appeal: ["оскарж"], skarg: ["оскарж"],
-  odcisk: ["відбитк"], fingerprint: ["відбитк"],
-  stały: ["постійн"], stal: ["постійн"], permanent: ["постійн"],
-  rezydent: ["резидент"], resident: ["резидент"], długotermin: ["резидент"],
-  czasow: ["тимчасов"], temporary: ["тимчасов"],
-  prac: ["робот", "прац"], work: ["робот", "прац"], zatrudni: ["робот"], employ: ["робот"],
-  rodzin: ["сім", "возз'єднан"], family: ["сім", "возз'єднан"], połącz: ["возз'єднан"],
-  student: ["студент", "навчанн"], studi: ["студент", "навчанн"], nauk: ["навчанн"],
-  wiz: ["віз"], visa: ["віз"],
-  dokument: ["документ"], document: ["документ"], paszport: ["паспорт"], passport: ["паспорт"],
-  opłat: ["оплат", "опłат", "мит"], oplat: ["оплат", "опłат", "мит"], fee: ["оплат", "опłат", "мит"],
-  koszt: ["оплат", "опłат", "мит"], cost: ["оплат", "опłат", "мит"], cena: ["оплат", "опłат"], price: ["оплат", "опłат"],
-  termin: ["строк"], deadline: ["строк"], czas: ["строк"],
-  powrót: ["поверн"], powrot: ["поверн"], return: ["поверн"], wydal: ["поверн"], deport: ["поверн"],
-  zatrzyman: ["затриман"], detention: ["затриман"],
-  pesel: ["PESEL"], ukr: ["UKR", "захист"], ukrai: ["UKR", "захист"],
-  ochron: ["захист"], protection: ["захист"],
-  zmian: ["змін"], change: ["змін"], nowel: ["змін"], amend: ["змін"],
-  małżeń: ["шлюб"], malzen: ["шлюб"], małżon: ["шлюб"], marriage: ["шлюб"], spouse: ["шлюб"],
-  dzieck: ["дитин", "неповнолітн"], child: ["дитин", "неповнолітн"], małolet: ["неповнолітн"],
-  polaka: ["поляка"],
-  ubezpiecz: ["страхуванн"], insurance: ["страхуванн"],
-  dochód: ["дохід"], dochod: ["дохід"], income: ["дохід"],
-  język: ["мов"], jezyk: ["мов"], language: ["мов"],
-  sezon: ["сезонн"], seasonal: ["сезонн"],
-  kontrol: ["контрол"], control: ["контрол"], policj: ["Поліці"], police: ["Поліці"],
-  granic: ["Прикордонн"], border: ["Прикордонн"],
-  wnios: ["заяв"], application: ["заяв"], apply: ["заяв"],
-  wojewod: ["воєвод"], voivode: ["воєвод"],
-  cofni: ["скасуванн"], revoke: ["скасуванн"],
-  humanitar: ["гуманітарн"],
-  uchodź: ["біжен"], uchodz: ["біжен"], refugee: ["біжен"],
-  lat: ["рок"], year: ["рок"],
-};
+// The hand-written PL/EN -> UA stem dictionary is gone. Every entry in the base now
+// declares the words it should be found by, in all three languages, so the bridge that
+// guessed at translations is no longer needed.
+
+const bezOgonkow = (s: string): string =>
+  s
+    .replace(/ą/g, "a").replace(/ć/g, "c").replace(/ę/g, "e").replace(/ł/g, "l")
+    .replace(/ń/g, "n").replace(/ó/g, "o").replace(/ś/g, "s")
+    .replace(/ź/g, "z").replace(/ż/g, "z");
+
+// Five characters, not six: six loses the common pair "czekajac" (question) / "czeka"
+// (entry), because the stem "czekaj" does not occur inside "czeka".
+const rdzen = (w: string): string => (w.length > 5 ? w.slice(0, 5) : w);
+
+// Function words of all three languages. Without this list, rarity weighting works
+// backwards: the Ukrainian preposition "для" occurs in only two entries of this
+// Polish-language base, so it looks maximally informative. In testing it outscored the
+// correct answer and additionally triggered the high-risk bonus.
+// Words asking about QUANTITY are deliberately absent: "ile" and "скільки" are part of
+// declared keywords ("ile kosztuje", "скільки коштує") and removing them hurt retrieval.
+const SLOWA_FUNKCYJNE = new Set([
+  "jak", "jaki", "jaka", "jakie", "jakiego", "jakim", "czy", "gdzie", "kiedy",
+  "kto", "cos", "dla", "przy", "pod", "nad", "tak", "ale", "lub", "ten", "tego", "juz",
+  "jeszcze", "byc", "bylo", "bedzie", "trzeba", "moge", "mozna", "mam", "mnie", "chce",
+  "jest", "sie", "nie", "oraz", "przez", "bez", "jestem", "potrzebne", "potrzebuje",
+  "musze", "moj", "moja", "swoje", "teraz", "dalej", "znowu", "bardzo", "tylko",
+  "які", "яка", "яке", "яко", "що", "чи", "де", "коли", "мені", "мене", "для",
+  "при", "про", "від", "над", "під", "так", "але", "або", "цей", "вже", "ще", "бути",
+  "буде", "було", "треба", "можу", "можна", "маю", "має", "хочу", "мій", "моя", "зараз",
+  "how", "what", "when", "where", "which", "who", "why", "the", "and", "for", "with",
+  "from", "about", "can", "may", "must", "need", "does", "did", "are", "was", "were",
+  "will", "would", "should", "you", "your", "this", "that", "long", "many", "much",
+  "take", "get", "have", "has", "there", "then", "still", "now",
+]);
 
 function tokenize(q: string): string[] {
-  const words = Array.from(
-    new Set(
-      q
-        .toLowerCase()
-        .replace(/[^\p{L}\p{N}\s]/gu, " ")
-        .split(/\s+/)
-        .filter((w) => w.length > 3),
-    ),
-  );
-  const bridgeStems: string[] = [];
-  for (const w of words) {
-    for (const [key, stems] of Object.entries(TERM_BRIDGE)) {
-      if (w.includes(key.toLowerCase())) {
-        bridgeStems.push(...stems);
-      }
-    }
-  }
-  return Array.from(new Set([...words, ...bridgeStems]));
+  const slowa = bezOgonkow(String(q).toLowerCase())
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .split(/\s+/)
+    .filter((w) => w.length >= 3 && !SLOWA_FUNKCYJNE.has(w));
+  return Array.from(new Set(slowa.map(rdzen).filter((r) => !SLOWA_FUNKCYJNE.has(r))));
 }
 
 // Ukrainian and Polish inflect heavily, so a whole-word substring test misses the right
@@ -234,57 +219,6 @@ export function buildKnowledgeBase(query = "", locale?: string): string {
   return selected.map((block) => block.text).join("\n\n");
 }
 
-function splitSections(text: string): string[] {
-  const parts = text.split(/\n(?=#{1,3} )/g).filter((p) => p.trim().length > 0);
-  return parts.length > 1 ? parts : [text];
-}
-
-/** Keeps only the legal sections relevant to the query so the prompt stays within provider payload limits. */
-function selectLegalBase(query: string): string {
-  const sections = splitSections(LEGAL_KNOWLEDGE_BASE);
-  const words = tokenize(query);
-  const scores = scoreSections(sections, words);
-  const scored = sections.map((section, index) => ({
-    section,
-    index,
-    score: scores[index],
-  }));
-  scored.sort((a, b) => b.score - a.score || a.index - b.index);
-
-  const picked: { section: string; index: number }[] = [];
-  let total = 0;
-  let totalBytes = 0;
-
-  for (let i = 0; i < Math.min(ALWAYS_INCLUDE_COUNT, sections.length); i++) {
-    picked.push({ section: sections[i], index: i });
-    total += sections[i].length;
-    totalBytes += byteLength(sections[i]);
-  }
-
-  // Pinned before the budget loop, so the illegal-stay section is always present for a
-  // question about illegal stay even when other sections would have filled the budget.
-  if (HIGH_RISK_QUERY.test(query)) {
-    const riskIndex = sections.findIndex((s) => s.includes("Нелегальне перебування"));
-    if (riskIndex >= 0 && !picked.some((p) => p.index === riskIndex)) {
-      picked.push({ section: sections[riskIndex], index: riskIndex });
-      total += sections[riskIndex].length;
-      totalBytes += byteLength(sections[riskIndex]);
-    }
-  }
-
-  for (const item of scored) {
-    if (picked.some((p) => p.index === item.index)) continue;
-    if (total + item.section.length > MAX_LEGAL_CHARS) continue;
-    const sectionBytes = byteLength(item.section);
-    if (totalBytes + sectionBytes > MAX_LEGAL_BYTES) continue;
-    picked.push(item);
-    total += item.section.length;
-    totalBytes += sectionBytes;
-    if (total > MAX_LEGAL_CHARS * 0.9) break;
-  }
-  picked.sort((a, b) => a.index - b.index);
-  return picked.map((p) => p.section).join("\n");
-}
 
 export function buildSystemPrompt(
   query = "",

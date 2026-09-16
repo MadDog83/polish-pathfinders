@@ -234,12 +234,27 @@ function sanitizeCitations(
   text: string,
   acts: EliAct[] = [],
   verified: Set<string> = new Set(),
+  mapaUstaw: Record<string, string[]> = {},
 ): string {
   const byEli = new Map(acts.map((a) => [a.eli.toUpperCase(), a]));
   const urls = [
     ...Object.values(LAW_LINKS).map((l) => l.url),
+    ...Object.values(ACT_URLS),
     ...acts.map((a) => eliUrl(a.address)),
   ];
+
+  /** One expansion for both marker spellings, so the act name is decided in a single place. */
+  const rozwin = (key: string, detail: string): string => {
+    const entry = LAW_LINKS[key];
+    if (!entry) return "";
+    const d = verifyDetail(String(detail).trim(), verified);
+    const wlasciwa = key === "USTAWA" ? ustawaDla(d, mapaUstaw) : null;
+    const label = wlasciwa ?? entry.label;
+    const url = wlasciwa && wlasciwa !== entry.label ? ACT_URLS[wlasciwa] : entry.url;
+    const tekst = d ? `${label}, ${d}` : label;
+    return url ? `[${tekst}](${url})` : tekst;
+  };
+
   let out = text;
 
   // -1. Any "art. X ust. Y" the curated legal base does not literally contain is a

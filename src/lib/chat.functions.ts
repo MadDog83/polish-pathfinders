@@ -34,6 +34,26 @@ const LAW_LINKS: Record<string, { url: string; label: string }> = {
   },
 };
 
+// The knowledge-base index says which act each article belongs to, so a citation can
+// carry the right act name instead of the single one this file used to know. Art. 30 is
+// in the citizenship act, and labelling it "ustawa o cudzoziemcach" was simply false.
+// An act with no verified address here renders as plain text: a wrong link is worse than
+// no link, so nothing is guessed.
+const ACT_URLS: Record<string, string> = {
+  "ustawa o cudzoziemcach":
+    "https://isap.sejm.gov.pl/isap.nsf/DocDetails.xsp?id=wdu20130001650",
+  "ustawa o obywatelstwie polskim":
+    "https://isap.sejm.gov.pl/isap.nsf/DocDetails.xsp?id=WDU20120000161",
+};
+
+/** The act an article really belongs to; null when the index cannot say unambiguously. */
+function ustawaDla(detail: string, mapa: Record<string, string[]>): string | null {
+  const nr = detail.match(/art\.\s?(\d+[a-z]?)/i)?.[1];
+  if (!nr) return null;
+  const akty = mapa[nr.toLowerCase()] ?? mapa[nr] ?? [];
+  return akty.length === 1 ? akty[0] : null;
+}
+
 // --- Live catalogue of foreigner-related acts from the official Sejm ELI register. ---
 const BASE_ACT_ID = "DU/2013/1650"; // ustawa o cudzoziemcach
 const CATALOGUE_FROM = "2025-07-01"; // only acts announced from H2 2025 on

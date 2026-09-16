@@ -329,6 +329,19 @@ function sanitizeCitations(
     out = out.split(`@@LAWURL${i}@@`).join(url);
   });
 
+  // 4b. The legal base now prints the act's name next to every topic, so the model tends
+  // to write the citation out in prose AND emit the marker for it, producing
+  // "art. 112a ust. 1 ustawy o cudzoziemcach ustawa o cudzoziemcach, art. 112a ust. 1".
+  // Drop the prose copy sitting directly in front of a generated link.
+  out = out.replace(
+    /(?:art\.\s?\d+[a-z]?(?:\s+ust\.\s?\d+[a-z]?)?\s+)?ustaw\w*\s+o\s+(?:cudzoziemcach|obywatelstwie\s+polskim)\s*[,;:–—-]?\s*(?=\[[^\]]*\]\()/gi,
+    "",
+  );
+
+  // This site's own help pages are not a legal source, and "(FAQ o CUKR)" reads to the
+  // user like one. Cite an act or an official page, or say nothing.
+  out = out.replace(/\s*\((?:FAQ|F\.A\.Q\.|ЧаПи?)[^)]*\)/gi, "");
+
   // 5. Tidy leftovers from the deletions.
   out = out.replace(/\[\s*([^\]]*)\]\(\s*\)/g, "$1");
   out = out.replace(/\(\s*\)/g, "");

@@ -34,6 +34,26 @@ const LAW_LINKS: Record<string, { url: string; label: string }> = {
   },
 };
 
+// The knowledge-base index says which act each article belongs to, so a citation can
+// carry the right act name instead of the single one this file used to know. Art. 30 is
+// in the citizenship act, and labelling it "ustawa o cudzoziemcach" was simply false.
+// An act with no verified address here renders as plain text: a wrong link is worse than
+// no link, so nothing is guessed.
+const ACT_URLS: Record<string, string> = {
+  "ustawa o cudzoziemcach":
+    "https://isap.sejm.gov.pl/isap.nsf/DocDetails.xsp?id=wdu20130001650",
+  "ustawa o obywatelstwie polskim":
+    "https://isap.sejm.gov.pl/isap.nsf/DocDetails.xsp?id=WDU20120000161",
+};
+
+/** The act an article really belongs to; null when the index cannot say unambiguously. */
+function ustawaDla(detail: string, mapa: Record<string, string[]>): string | null {
+  const nr = detail.match(/art\.\s?(\d+[a-z]?)/i)?.[1];
+  if (!nr) return null;
+  const akty = mapa[nr.toLowerCase()] ?? mapa[nr] ?? [];
+  return akty.length === 1 ? akty[0] : null;
+}
+
 // --- Live catalogue of foreigner-related acts from the official Sejm ELI register. ---
 const BASE_ACT_ID = "DU/2013/1650"; // ustawa o cudzoziemcach
 const CATALOGUE_FROM = "2025-07-01"; // only acts announced from H2 2025 on
@@ -214,12 +234,27 @@ function sanitizeCitations(
   text: string,
   acts: EliAct[] = [],
   verified: Set<string> = new Set(),
+  mapaUstaw: Record<string, string[]> = {},
 ): string {
   const byEli = new Map(acts.map((a) => [a.eli.toUpperCase(), a]));
   const urls = [
     ...Object.values(LAW_LINKS).map((l) => l.url),
+    ...Object.values(ACT_URLS),
     ...acts.map((a) => eliUrl(a.address)),
   ];
+
+  /** One expansion for both marker spellings, so the act name is decided in a single place. */
+  const rozwin = (key: string, detail: string): string => {
+    const entry = LAW_LINKS[key];
+    if (!entry) return "";
+    const d = verifyDetail(String(detail).trim(), verified);
+    const wlasciwa = key === "USTAWA" ? ustawaDla(d, mapaUstaw) : null;
+    const label = wlasciwa ?? entry.label;
+    const url = wlasciwa && wlasciwa !== entry.label ? ACT_URLS[wlasciwa] : entry.url;
+    const tekst = d ? `${label}, ${d}` : label;
+    return url ? `[${tekst}](${url})` : tekst;
+  };
+
   let out = text;
 
   // -1. Any "art. X ust. Y" the curated legal base does not literally contain is a
@@ -246,21 +281,16 @@ function sanitizeCitations(
   out = out.replace(/\bWDU\d{6,}\b/gi, "");
 
   // 2. Expand our own markers into verified links.
-  out = out.replace(/\[LAW:([A-Z0-9_]+)([^\]]*)\]/g, (_m, key: string, detail: string) => {
-    const entry = LAW_LINKS[key];
-    if (!entry) return "";
-    const d = verifyDetail(String(detail).trim(), verified);
-    return `[${d ? `${entry.label}, ${d}` : entry.label}](${entry.url})`;
-  });
+  out = out.replace(/\[LAW:([A-Z0-9_]+)([^\]]*)\]/g, (_m, key: string, detail: string) =>
+    rozwin(key, detail),
+  );
 
   // The model sometimes drops the square brackets around its own marker; expand that form
   // too, so internal marker syntax is never shown to the user.
-  out = out.replace(/\bLAW:([A-Z0-9_]+)((?:\s+art\.\s?\d+[a-z]?(?:\s+ust\.\s?\d+[a-z]?)?)?)/g, (_m, key: string, detail: string) => {
-    const entry = LAW_LINKS[key];
-    if (!entry) return "";
-    const d = verifyDetail(String(detail).trim(), verified);
-    return `[${d ? `${entry.label}, ${d}` : entry.label}](${entry.url})`;
-  });
+  out = out.replace(
+    /\bLAW:([A-Z0-9_]+)((?:\s+art\.\s?\d+[a-z]?(?:\s+ust\.\s?\d+[a-z]?)?)?)/g,
+    (_m, key: string, detail: string) => rozwin(key, detail),
+  );
 
   // 3. Expand catalogue markers — only ids that really exist in the live register survive,
   //    which makes an invented citation structurally impossible.
@@ -298,6 +328,19 @@ function sanitizeCitations(
   urls.forEach((url, i) => {
     out = out.split(`@@LAWURL${i}@@`).join(url);
   });
+
+  // 4b. The legal base now prints the act's name next to every topic, so the model tends
+  // to write the citation out in prose AND emit the marker for it, producing
+  // "art. 112a ust. 1 ustawy o cudzoziemcach ustawa o cudzoziemcach, art. 112a ust. 1".
+  // Drop the prose copy sitting directly in front of a generated link.
+  out = out.replace(
+    /(?:art\.\s?\d+[a-z]?(?:\s+ust\.\s?\d+[a-z]?)?\s+)?ustaw\w*\s+o\s+(?:cudzoziemcach|obywatelstwie\s+polskim)\s*[,;:–—-]?\s*(?=\[[^\]]*\]\()/gi,
+    "",
+  );
+
+  // This site's own help pages are not a legal source, and "(FAQ o CUKR)" reads to the
+  // user like one. Cite an act or an official page, or say nothing.
+  out = out.replace(/\s*\((?:FAQ|F\.A\.Q\.|ЧаПи?)[^)]*\)/gi, "");
 
   // 5. Tidy leftovers from the deletions.
   out = out.replace(/\[\s*([^\]]*)\]\(\s*\)/g, "$1");
@@ -420,7 +463,7 @@ export const askAssistant = createServerFn({ method: "POST" })
     const indeks = await getLegalIndex();
     const wybor = indeks
       ? selectLegalSections(indeks, lastUser)
-      : { tekst: "", wpisy: [] as { artykuly_zakazane: string[] }[] };
+      : { tekst: "", wpisy: [] as { artykuly: string[]; artykuly_zakazane: string[] }[] };
 
     // Only the search-capable model may be told it can search; telling a tool-less
     // model to search makes it emit a tool call that Groq rejects with 400.
@@ -570,9 +613,19 @@ export const askAssistant = createServerFn({ method: "POST" })
       throw new Error(`${busy ? "RATE_LIMITED" : "ASSISTANT_FAILED"} [${summary}]`);
     }
 
+    // An article one topic forbids stays forbidden only while no OTHER selected topic
+    // claims it as its own. Several topics are selected per question, so without this
+    // subtraction the Border Guard chain lost art. 321 to the voivode topic's prohibition
+    // — in the one answer where art. 321 was exactly the right citation.
+    const jawne = new Set(
+      wybor.wpisy.flatMap((w) => w.artykuly || []).map((a) => String(a).toLowerCase()),
+    );
     const zakazane = new Set(
-      wybor.wpisy.flatMap((w) => w.artykuly_zakazane || []).map((a) => String(a).toLowerCase()),
+      wybor.wpisy
+        .flatMap((w) => w.artykuly_zakazane || [])
+        .map((a) => String(a).toLowerCase())
+        .filter((a) => !jawne.has(a)),
     );
     const dozwolone = bezZakazanych(verifiedRefsFrom(wybor.tekst), zakazane);
-    return { text: sanitizeCitations(text, acts, dozwolone) };
+    return { text: sanitizeCitations(text, acts, dozwolone, indeks?.artykulyUstaw ?? {}) };
   });

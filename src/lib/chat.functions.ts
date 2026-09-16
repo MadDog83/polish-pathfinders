@@ -463,7 +463,7 @@ export const askAssistant = createServerFn({ method: "POST" })
     const indeks = await getLegalIndex();
     const wybor = indeks
       ? selectLegalSections(indeks, lastUser)
-      : { tekst: "", wpisy: [] as { artykuly_zakazane: string[] }[] };
+      : { tekst: "", wpisy: [] as { artykuly: string[]; artykuly_zakazane: string[] }[] };
 
     // Only the search-capable model may be told it can search; telling a tool-less
     // model to search makes it emit a tool call that Groq rejects with 400.

@@ -281,21 +281,16 @@ function sanitizeCitations(
   out = out.replace(/\bWDU\d{6,}\b/gi, "");
 
   // 2. Expand our own markers into verified links.
-  out = out.replace(/\[LAW:([A-Z0-9_]+)([^\]]*)\]/g, (_m, key: string, detail: string) => {
-    const entry = LAW_LINKS[key];
-    if (!entry) return "";
-    const d = verifyDetail(String(detail).trim(), verified);
-    return `[${d ? `${entry.label}, ${d}` : entry.label}](${entry.url})`;
-  });
+  out = out.replace(/\[LAW:([A-Z0-9_]+)([^\]]*)\]/g, (_m, key: string, detail: string) =>
+    rozwin(key, detail),
+  );
 
   // The model sometimes drops the square brackets around its own marker; expand that form
   // too, so internal marker syntax is never shown to the user.
-  out = out.replace(/\bLAW:([A-Z0-9_]+)((?:\s+art\.\s?\d+[a-z]?(?:\s+ust\.\s?\d+[a-z]?)?)?)/g, (_m, key: string, detail: string) => {
-    const entry = LAW_LINKS[key];
-    if (!entry) return "";
-    const d = verifyDetail(String(detail).trim(), verified);
-    return `[${d ? `${entry.label}, ${d}` : entry.label}](${entry.url})`;
-  });
+  out = out.replace(
+    /\bLAW:([A-Z0-9_]+)((?:\s+art\.\s?\d+[a-z]?(?:\s+ust\.\s?\d+[a-z]?)?)?)/g,
+    (_m, key: string, detail: string) => rozwin(key, detail),
+  );
 
   // 3. Expand catalogue markers — only ids that really exist in the live register survive,
   //    which makes an invented citation structurally impossible.

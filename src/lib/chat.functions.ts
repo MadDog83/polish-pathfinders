@@ -613,9 +613,19 @@ export const askAssistant = createServerFn({ method: "POST" })
       throw new Error(`${busy ? "RATE_LIMITED" : "ASSISTANT_FAILED"} [${summary}]`);
     }
 
+    // An article one topic forbids stays forbidden only while no OTHER selected topic
+    // claims it as its own. Several topics are selected per question, so without this
+    // subtraction the Border Guard chain lost art. 321 to the voivode topic's prohibition
+    // — in the one answer where art. 321 was exactly the right citation.
+    const jawne = new Set(
+      wybor.wpisy.flatMap((w) => w.artykuly || []).map((a) => String(a).toLowerCase()),
+    );
     const zakazane = new Set(
-      wybor.wpisy.flatMap((w) => w.artykuly_zakazane || []).map((a) => String(a).toLowerCase()),
+      wybor.wpisy
+        .flatMap((w) => w.artykuly_zakazane || [])
+        .map((a) => String(a).toLowerCase())
+        .filter((a) => !jawne.has(a)),
     );
     const dozwolone = bezZakazanych(verifiedRefsFrom(wybor.tekst), zakazane);
-    return { text: sanitizeCitations(text, acts, dozwolone) };
+    return { text: sanitizeCitations(text, acts, dozwolone, indeks?.artykulyUstaw ?? {}) };
   });

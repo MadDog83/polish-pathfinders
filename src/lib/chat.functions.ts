@@ -332,10 +332,20 @@ function sanitizeCitations(
   // 4b. The legal base now prints the act's name next to every topic, so the model tends
   // to write the citation out in prose AND emit the marker for it, producing
   // "art. 112a ust. 1 ustawy o cudzoziemcach ustawa o cudzoziemcach, art. 112a ust. 1".
-  // Drop the prose copy sitting directly in front of a generated link.
+  // Drop the prose copy sitting directly in front of a generated link — but only the part
+  // the link really repeats. The first version of this deleted the article number along
+  // with the act name, and when the model emitted a marker WITHOUT an article number
+  // ("[LAW:USTAWA]"), that deletion removed the only place the provision appeared: the
+  // answer then cited a bare act and no article at all. The link's own text now decides.
   out = out.replace(
-    /(?:art\.\s?\d+[a-z]?(?:\s+ust\.\s?\d+[a-z]?)?\s+)?ustaw\w*\s+o\s+(?:cudzoziemcach|obywatelstwie\s+polskim)\s*[,;:–—-]?\s*(?=\[[^\]]*\]\()/gi,
-    "",
+    /(?:(art\.\s?\d+[a-z]?(?:\s+ust\.\s?\d+[a-z]?)?)\s+)?ustaw\w*\s+o\s+(?:cudzoziemcach|obywatelstwie\s+polskim)\s*[,;:.–—-]?\s*(?=\[[^\]]*\]\()/gi,
+    (match: string, article: string | undefined, offset: number, whole: string) => {
+      const link = whole.slice(offset + match.length).match(/^\[([^\]]*)\]/)?.[1] ?? "";
+      const nr = article?.match(/\d+[a-z]?/i)?.[0];
+      // The act name is always a duplicate here; the article survives unless the link carries it.
+      if (nr && !new RegExp(`art\\.\\s?${nr}\\b`, "i").test(link)) return `${article} `;
+      return "";
+    },
   );
 
   // This site's own help pages are not a legal source, and "(FAQ o CUKR)" reads to the

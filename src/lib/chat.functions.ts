@@ -637,5 +637,13 @@ export const askAssistant = createServerFn({ method: "POST" })
         .filter((a) => !jawne.has(a)),
     );
     const dozwolone = bezZakazanych(verifiedRefsFrom(wybor.tekst), zakazane);
-    return { text: sanitizeCitations(text, acts, dozwolone, indeks?.artykulyUstaw ?? {}) };
+    // The cascade trace used to exist only inside the thrown error, so it was visible
+    // exactly when every model failed. A silent fall back to the offline models looked
+    // identical to a normal answer, and "is the search model serving?" had to be inferred
+    // from response latency — which is guessing, not measuring. It rides along now.
+    return {
+      text: sanitizeCitations(text, acts, dozwolone, indeks?.artykulyUstaw ?? {}),
+      trace: trace.join(", "),
+      baza: `${wybor.wpisy.length} tematów, ${new TextEncoder().encode(wybor.tekst).length} B`,
+    };
   });

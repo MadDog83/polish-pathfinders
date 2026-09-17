@@ -134,6 +134,9 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
     setThinking(true);
     try {
       const res = await askAssistant({ data: { messages: historyRef.current, locale } });
+      // Which model actually answered, and how much legal base it was given. Readable from
+      // the browser console next to the existing "[assistant]" error line.
+      console.info("[assistant] model:", res.trace ?? "?", "| baza:", res.baza ?? "?");
       historyRef.current = [...historyRef.current, { role: "assistant" as const, content: res.text }].slice(-12);
       setMessages((m) => [...m, { role: "bot", kind: "text", text: res.text }]);
     } catch (err) {

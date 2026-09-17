@@ -3,7 +3,7 @@ import { getDict, LOCALES, SITE_NAME } from "@/i18n";
 // groq/compound-mini enforces a small per-request size limit (413 request_too_large),
 // so the prompt budget has to stay well below the previous 20k/15k figures.
 const MAX_SITE_KB_CHARS = 5000; // now single-language, so ~3x more useful content fits
-const MAX_LEGAL_BYTES = 7000;
+const MAX_LEGAL_BYTES = 5000;
 
 // The legal knowledge base is maintained in its own repository and only READ here, so a
 // change to the law needs a rebuilt index — not a deploy of this app. Each entry is one
@@ -114,6 +114,32 @@ const WAGA_TRESC = 1; // hit in its body
 const BONUS_RYZYKO = 5; // a high-risk entry that matches at all must not lose on points
 const PROG_POSPOLITOSCI = 0.5;
 
+// Bonus for matching a multi-word declared keyword. These were dead weight until now:
+// tokenizing splits "how much" into two function words and drops both, so the author's
+// declaration had no effect at all — and the phrase is exactly what carries the intent.
+// "How much does a temporary residence card cost?" reached the fees entry through the
+// single word "cost" and lost to entries matching three weak ones ("card", "resid").
+const WAGA_FRAZY = 5;
+
+// The prompt gets the topics that actually answer the question, not as many as fit in the
+// budget. Filling the budget hurt twice over: it ate the provider's per-request allowance
+// (answers ended in 413) and handed the model someone else's material — asked whether two
+// months abroad ends UKR status, the bot described the CUKR card, even though the right
+// topic ranked first by a wide margin.
+// 0.35 and four topics sit in the middle of the range where all 44 retrieval test cases
+// in the knowledge-base repository pass; verified for 0.30-0.40 and 3-5 topics. The byte
+// budget is the hard edge: at 4500 B two cases fail because a large correct entry no
+// longer fits.
+const PROG_ISTOTNOSCI = 0.35;
+const MAX_TEMATOW = 4;
+
+/** The question as one normalized string, for matching multi-word declared keywords. */
+const znormalizuj = (pytanie: string): string =>
+  bezOgonkow(String(pytanie).toLowerCase())
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
 /**
  * A stem's weight depends on how many entries contain it. "Коштує" sits in one entry and
  * effectively points at the answer; "карта" sits in four and separates almost nothing.
@@ -141,6 +167,7 @@ export function selectLegalSections(
 ): { tekst: string; wpisy: WpisBazy[] } {
   const rdzenie = tokenize(query);
   const wagi = wagiRdzeni(indeks.wpisy, rdzenie);
+  const pytanieCiagiem = znormalizuj(query);
 
   const ocenione = indeks.wpisy
     .map((wpis) => {
@@ -159,6 +186,14 @@ export function selectLegalSections(
         if (tytul.includes(r)) punkty += WAGA_TYTUL * waga;
         if (tresc.includes(r)) punkty += WAGA_TRESC * waga;
       }
+      // A multi-word keyword is matched whole, because its individual words are function
+      // words that do not survive tokenizing. The author declares the phrase deliberately,
+      // which is a stronger signal of intent than an incidental single-word hit.
+      for (const haslo of wpis.slowa || []) {
+        const fraza = bezOgonkow(String(haslo).toLowerCase()).trim();
+        if (fraza.includes(" ") && pytanieCiagiem.includes(fraza)) punkty += WAGA_FRAZY;
+      }
+
       // A wrong answer on these topics costs the user the legality of their stay, so an
       // entry marked high-risk that matches at all gets priority. The data decides this,
       // not a regex in the code.
@@ -176,7 +211,11 @@ export function selectLegalSections(
 
   const wybrane: WpisBazy[] = [];
   let bajty = 0;
+  const najlepszy = ocenione.length ? ocenione[0].punkty : 0;
   for (const x of ocenione) {
+    if (wybrane.length >= MAX_TEMATOW) break;
+    // The first topic always goes in; later ones only while they genuinely compete with it.
+    if (wybrane.length > 0 && x.punkty < najlepszy * PROG_ISTOTNOSCI) break;
     if (bajty + x.bajty > budzetBajtow) continue;
     wybrane.push(x.wpis);
     bajty += x.bajty;

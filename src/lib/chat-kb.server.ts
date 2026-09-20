@@ -19,6 +19,8 @@ export type WpisBazy = {
   ustawa: string | null;
   artykuly: string[];
   artykuly_zakazane: string[];
+  /** Topics that must never share a prompt with this one — see the selection loop. */
+  wyklucza?: string[];
   organ: string | null;
   ryzyko: string;
   slowa: string[];
@@ -133,6 +135,20 @@ const WAGA_FRAZY = 5;
 const PROG_ISTOTNOSCI = 0.35;
 const MAX_TEMATOW = 4;
 
+// A topic can declare, in the knowledge-base repository, which other topics must never
+// share a prompt with it. The three appeal routes — visa refusal, voivode refusal, Border
+// Guard return decision — are alternative procedures for different situations, and handing
+// two of them to the model at once is handing it material to confuse: asked about a refused
+// national visa, the bot answered with the deadline and authority of the voivode route,
+// even though the right topic won the ranking almost two to one. The ban was written in
+// that topic's own text and was ignored, like every ban written in prose.
+//
+// The margin matters. Without it a tie is settled by the tie-breaker below, so at equal
+// scores the smaller file would silence the correct one — which is exactly what happened
+// in testing for "wojewoda odmówił mi zezwolenia", where both topics scored 13.8. At a tie
+// both topics go in and the model chooses; exclusion is for a clear winner only.
+const PRZEWAGA_WYKLUCZENIA = 1.25;
+
 /** The question as one normalized string, for matching multi-word declared keywords. */
 const znormalizuj = (pytanie: string): string =>
   bezOgonkow(String(pytanie).toLowerCase())
@@ -210,14 +226,20 @@ export function selectLegalSections(
     );
 
   const wybrane: WpisBazy[] = [];
+  // id of an excluded topic -> the score of the topic that excludes it
+  const wykluczone = new Map<string, number>();
   let bajty = 0;
   const najlepszy = ocenione.length ? ocenione[0].punkty : 0;
   for (const x of ocenione) {
     if (wybrane.length >= MAX_TEMATOW) break;
+    const wykluczajacy = wykluczone.get(x.wpis.id);
+    if (wykluczajacy !== undefined && wykluczajacy >= x.punkty * PRZEWAGA_WYKLUCZENIA) continue;
     // The first topic always goes in; later ones only while they genuinely compete with it.
     if (wybrane.length > 0 && x.punkty < najlepszy * PROG_ISTOTNOSCI) break;
     if (bajty + x.bajty > budzetBajtow) continue;
     wybrane.push(x.wpis);
+    for (const id of x.wpis.wyklucza || [])
+      wykluczone.set(id, Math.max(wykluczone.get(id) || 0, x.punkty));
     bajty += x.bajty;
   }
 

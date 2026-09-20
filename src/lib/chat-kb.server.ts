@@ -149,6 +149,17 @@ const MAX_TEMATOW = 4;
 // both topics go in and the model chooses; exclusion is for a clear winner only.
 const PRZEWAGA_WYKLUCZENIA = 1.25;
 
+// The floor. Without it a single common stem was enough for a topic to "win" the ranking,
+// and the answer came out as confident as one backed by forty points: the question
+// "co mam zrobić?" leaves the single stem "zrobi", which matched a keyword of the
+// lost-card topic, and the user got instructions for reporting a theft they never asked
+// about. Measured, not guessed: across the 49 real test questions in the knowledge-base
+// repository the lowest score is 14.1 with a median of 24.4, while vague and out-of-scope
+// questions land between 1 and 10.4. Twelve sits in that gap. Below it we hand over no
+// topic at all — better that the assistant asks what the question is about than that it
+// answers a question nobody asked.
+const PROG_MINIMALNY = 12;
+
 /** The question as one normalized string, for matching multi-word declared keywords. */
 const znormalizuj = (pytanie: string): string =>
   bezOgonkow(String(pytanie).toLowerCase())
@@ -224,6 +235,10 @@ export function selectLegalSections(
         a.bajty - b.bajty ||
         a.wpis.id.localeCompare(b.wpis.id),
     );
+
+  // Nothing matches strongly enough: return an empty base rather than a topic picked at
+  // random by one weak stem.
+  if (!ocenione.length || ocenione[0].punkty < PROG_MINIMALNY) return { tekst: "", wpisy: [] };
 
   const wybrane: WpisBazy[] = [];
   // id of an excluded topic -> the score of the topic that excludes it
@@ -314,7 +329,7 @@ export function buildSystemPrompt(
     "",
     "# LEGAL BASE (topics selected for this question; each one names the act its articles belong to)",
     legalBase ||
-      "(The legal base could not be loaded for this request. Do not fill the gap from memory: say plainly which part you cannot confirm and point to the official page.)",
+      "(No topic in the knowledge base matched this question closely enough, or the base could not be loaded. Do not fill the gap from memory and do not answer a question that was not asked. If the message is too vague to act on — for example just \"what should I do?\" — ask, in the user's language, what their situation is: which permit or document it concerns and what has already happened. If it is a clear question you simply cannot confirm, say so plainly and point to the official page.)",
   ].join("\n");
 }
 

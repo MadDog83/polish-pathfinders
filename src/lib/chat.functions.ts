@@ -498,29 +498,21 @@ export const askAssistant = createServerFn({ method: "POST" })
         ...(model.startsWith("openai/gpt-oss")
           ? { include_reasoning: false, reasoning_effort: "low" }
           : {}),
-        ...(withSearch
-          ? {
-              search_settings: {
-                include_domains: [
-                  "www.gov.pl",
-                  "*.gov.pl",
-                  "mos.cudzoziemcy.gov.pl",
-                  "migrant.wsc.mazowieckie.pl",
-                  "isap.sejm.gov.pl",
-                ],
-              },
-            }
-          : {}),
+        // search_settings/include_domains was a Compound-only parameter. browser_search has
+        // no domain filter, so the source rule lives in the SEARCH section of the prompt.
+        ...(withSearch ? { tools: [{ type: "browser_search" }], tool_choice: "auto" } : {}),
         messages: [
           { role: "system", content: systemPromptFor(withSearch) },
           ...historyWithLangHint,
         ],
       });
 
-    // Always try the live-search model first; cooldown/429 handling falls back to the
-    // offline models when compound-mini is unavailable.
+    // groq/compound-mini was decommissioned by Groq on 2026-09-21 with no successor. Web
+    // search now comes from the built-in `browser_search` tool of gpt-oss. The same model
+    // is listed again without search, so a failure of the search tool (unsupported on the
+    // plan, timeout, 400) degrades to an offline answer instead of the failure message.
     const ALL_CANDIDATES = [
-      { model: "groq/compound-mini", withSearch: true },
+      { model: "openai/gpt-oss-120b", withSearch: true },
       { model: "openai/gpt-oss-120b", withSearch: false },
       { model: "openai/gpt-oss-20b", withSearch: false },
     ];
@@ -545,6 +537,7 @@ export const askAssistant = createServerFn({ method: "POST" })
     let res: Response | undefined;
     let text = "";
     outer: for (const candidate of candidates) {
+      const nazwa = short(candidate.model) + (candidate.withSearch ? "+search" : "");
       const body = buildBody(candidate.model, candidate.withSearch);
       for (let attempt = 0; attempt < 3; attempt++) {
         try {
@@ -557,11 +550,12 @@ export const askAssistant = createServerFn({ method: "POST" })
               Authorization: `Bearer ${apiKey}`,
             },
             body,
-            signal: AbortSignal.timeout(30_000),
+            signal: AbortSignal.timeout(candidate.withSearch ? 40_000 : 30_000),
           });
         } catch {
-          trace.push(`${short(candidate.model)}:neterr`);
+          trace.push(`${nazwa}:neterr`);
           res = undefined;
+          if (candidate.withSearch) break;
           if (attempt === 2) break;
           await sleep(1000 * 2 ** attempt);
           continue;
@@ -573,12 +567,12 @@ export const askAssistant = createServerFn({ method: "POST" })
           };
           text = (json.choices?.[0]?.message?.content ?? "").trim();
           if (text) {
-            trace.push(`${short(candidate.model)}:ok`);
+            trace.push(`${nazwa}:ok`);
             break outer;
           }
           // Empty content: let the next model try. Never fall back to the model's raw
           // reasoning — internal monologue must never reach the user.
-          trace.push(`${short(candidate.model)}:empty`);
+          trace.push(`${nazwa}:empty`);
           break;
         }
         // Rejected, too large or rate-limited: this model can't serve the request right now, move to the fallback model.
@@ -586,20 +580,22 @@ export const askAssistant = createServerFn({ method: "POST" })
           const after = Number(res.headers.get("retry-after"));
           const wait = Number.isFinite(after) && after > 0 ? after * 1000 : COOLDOWN_MS;
           modelCooldown.set(candidate.model, Date.now() + Math.min(wait, 600_000));
-          trace.push(`${short(candidate.model)}:429`);
+          trace.push(`${nazwa}:429`);
           break;
         }
-        if (res.status === 400 || res.status === 413) {
-          trace.push(`${short(candidate.model)}:${res.status}`);
+        // 404 = model decommissioned or unknown. Treat it like 400/413 and move on to the
+        // next model: a retired model must never take the whole assistant down again.
+        if (res.status === 400 || res.status === 404 || res.status === 413) {
+          trace.push(`${nazwa}:${res.status}`);
           break;
         }
         // Any other non-retryable client error: no point trying the fallback, give up.
         if (res.status < 500) {
-          trace.push(`${short(candidate.model)}:${res.status}`);
+          trace.push(`${nazwa}:${res.status}`);
           break outer;
         }
         if (attempt === 2) {
-          trace.push(`${short(candidate.model)}:${res.status}x3`);
+          trace.push(`${nazwa}:${res.status}x3`);
           break;
         }
 

@@ -312,6 +312,11 @@ function sanitizeCitations(
     return act ? `[Dz.U. ${act.year} poz. ${act.pos}](${eliUrl(act.address)})` : m;
   });
 
+  // 3a. The model sometimes wraps a finished link in an extra pair of brackets and bold
+  // markers — "[**[ustawa o cudzoziemcach, art. 108](url)**]" — and the user saw the stray
+  // "[**" and "**]" around the link. Keep the link, drop the wrapper.
+  out = out.replace(/\[\s*\*{0,2}\s*(\[[^\]]+\]\([^)]+\))\s*\*{0,2}\s*\]/g, "$1");
+
   // 3b. Anything still in single square brackets is neither a verified link nor a
   // recognized marker — the model wrote an ad-hoc citation-style aside that doesn't map
   // to anything real. Unwrap it to plain text instead of leaking raw brackets to the user.

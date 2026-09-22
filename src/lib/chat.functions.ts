@@ -498,29 +498,21 @@ export const askAssistant = createServerFn({ method: "POST" })
         ...(model.startsWith("openai/gpt-oss")
           ? { include_reasoning: false, reasoning_effort: "low" }
           : {}),
-        ...(withSearch
-          ? {
-              search_settings: {
-                include_domains: [
-                  "www.gov.pl",
-                  "*.gov.pl",
-                  "mos.cudzoziemcy.gov.pl",
-                  "migrant.wsc.mazowieckie.pl",
-                  "isap.sejm.gov.pl",
-                ],
-              },
-            }
-          : {}),
+        // search_settings/include_domains was a Compound-only parameter. browser_search has
+        // no domain filter, so the source rule lives in the SEARCH section of the prompt.
+        ...(withSearch ? { tools: [{ type: "browser_search" }], tool_choice: "auto" } : {}),
         messages: [
           { role: "system", content: systemPromptFor(withSearch) },
           ...historyWithLangHint,
         ],
       });
 
-    // Always try the live-search model first; cooldown/429 handling falls back to the
-    // offline models when compound-mini is unavailable.
+    // groq/compound-mini was decommissioned by Groq on 2026-09-21 with no successor. Web
+    // search now comes from the built-in `browser_search` tool of gpt-oss. The same model
+    // is listed again without search, so a failure of the search tool (unsupported on the
+    // plan, timeout, 400) degrades to an offline answer instead of the failure message.
     const ALL_CANDIDATES = [
-      { model: "groq/compound-mini", withSearch: true },
+      { model: "openai/gpt-oss-120b", withSearch: true },
       { model: "openai/gpt-oss-120b", withSearch: false },
       { model: "openai/gpt-oss-20b", withSearch: false },
     ];

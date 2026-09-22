@@ -537,6 +537,7 @@ export const askAssistant = createServerFn({ method: "POST" })
     let res: Response | undefined;
     let text = "";
     outer: for (const candidate of candidates) {
+      const nazwa = short(candidate.model) + (candidate.withSearch ? "+search" : "");
       const body = buildBody(candidate.model, candidate.withSearch);
       for (let attempt = 0; attempt < 3; attempt++) {
         try {
@@ -549,11 +550,12 @@ export const askAssistant = createServerFn({ method: "POST" })
               Authorization: `Bearer ${apiKey}`,
             },
             body,
-            signal: AbortSignal.timeout(30_000),
+            signal: AbortSignal.timeout(candidate.withSearch ? 40_000 : 30_000),
           });
         } catch {
-          trace.push(`${short(candidate.model)}:neterr`);
+          trace.push(`${nazwa}:neterr`);
           res = undefined;
+          if (candidate.withSearch) break;
           if (attempt === 2) break;
           await sleep(1000 * 2 ** attempt);
           continue;
@@ -581,8 +583,10 @@ export const askAssistant = createServerFn({ method: "POST" })
           trace.push(`${short(candidate.model)}:429`);
           break;
         }
-        if (res.status === 400 || res.status === 413) {
-          trace.push(`${short(candidate.model)}:${res.status}`);
+        // 404 = model decommissioned or unknown. Treat it like 400/413 and move on to the
+        // next model: a retired model must never take the whole assistant down again.
+        if (res.status === 400 || res.status === 404 || res.status === 413) {
+          trace.push(`${nazwa}:${res.status}`);
           break;
         }
         // Any other non-retryable client error: no point trying the fallback, give up.

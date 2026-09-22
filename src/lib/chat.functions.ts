@@ -567,12 +567,12 @@ export const askAssistant = createServerFn({ method: "POST" })
           };
           text = (json.choices?.[0]?.message?.content ?? "").trim();
           if (text) {
-            trace.push(`${short(candidate.model)}:ok`);
+            trace.push(`${nazwa}:ok`);
             break outer;
           }
           // Empty content: let the next model try. Never fall back to the model's raw
           // reasoning — internal monologue must never reach the user.
-          trace.push(`${short(candidate.model)}:empty`);
+          trace.push(`${nazwa}:empty`);
           break;
         }
         // Rejected, too large or rate-limited: this model can't serve the request right now, move to the fallback model.
@@ -580,7 +580,7 @@ export const askAssistant = createServerFn({ method: "POST" })
           const after = Number(res.headers.get("retry-after"));
           const wait = Number.isFinite(after) && after > 0 ? after * 1000 : COOLDOWN_MS;
           modelCooldown.set(candidate.model, Date.now() + Math.min(wait, 600_000));
-          trace.push(`${short(candidate.model)}:429`);
+          trace.push(`${nazwa}:429`);
           break;
         }
         // 404 = model decommissioned or unknown. Treat it like 400/413 and move on to the
@@ -591,11 +591,11 @@ export const askAssistant = createServerFn({ method: "POST" })
         }
         // Any other non-retryable client error: no point trying the fallback, give up.
         if (res.status < 500) {
-          trace.push(`${short(candidate.model)}:${res.status}`);
+          trace.push(`${nazwa}:${res.status}`);
           break outer;
         }
         if (attempt === 2) {
-          trace.push(`${short(candidate.model)}:${res.status}x3`);
+          trace.push(`${nazwa}:${res.status}x3`);
           break;
         }
 

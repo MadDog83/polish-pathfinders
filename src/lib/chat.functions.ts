@@ -167,8 +167,11 @@ function staleNotice(acts: EliAct[]): string {
 }
 
 // Questions about documents, acts, links or legal changes, in Ukrainian, Polish and English.
+// Narrowed: the old pattern matched "wniosek", "заява", "статус", "document" — almost
+// every question — and attached the act catalogue (~500 tokens) to nearly every request.
+// The catalogue is only useful when the user asks about acts, links, sources or changes.
 const DOC_QUESTION =
-  /(закон|устав|акт|розпоряд|посилан|адрес|джерел|документ|стат|артик|змін|новел|формуляр|заяв|припис|ustaw|akt|rozporz|link|adres|źródł|dokument|artyku|przepis|zmian|nowel|formularz|wniosek|law|act|link|address|source|document|article|amend|form|application)/i;
+  /(закон|акт|розпоряд|посилан|джерел|новел|змін|ustaw|\bakt|rozporz|link|źródł|przepis|zmian|nowel|dz\.?\s?u|\blaw\b|\bact\b|source|amend|regulation)/i;
 
 const ART_REF = /art\.\s?\d+[a-z]?(?:\s+ust\.\s?\d+)?/gi;
 
@@ -436,7 +439,13 @@ export const askAssistant = createServerFn({ method: "POST" })
     );
 
     // Keep the payload small: only recent turns + retrieval-narrowed knowledge base.
-    const history = data.messages.slice(-6);
+    // Free-plan budget: the last 4 turns, and earlier assistant answers cut to 700 characters.
+    // Each follow-up used to resend every previous answer in full.
+    const history = data.messages.slice(-4).map((m, i, arr) =>
+      m.role === "assistant" && i < arr.length - 1 && m.content.length > 700
+        ? { ...m, content: m.content.slice(0, 700) + " …" }
+        : m,
+    );
     const lastUser = [...history].reverse().find((m) => m.role === "user")?.content ?? "";
     const label = LANG_LABEL[detectReplyLanguage(lastUser)];
     const historyWithLangHint = history.map((m, i) =>
@@ -497,7 +506,9 @@ export const askAssistant = createServerFn({ method: "POST" })
         // return empty content; the reasoning must also never come back to us at all.
         ...(model.startsWith("openai/gpt-oss")
           ? { include_reasoning: false, reasoning_effort: "low" }
-          : {}),
+          : model.startsWith("qwen/")
+            ? { reasoning_effort: "none" }
+            : {}),
         // search_settings/include_domains was a Compound-only parameter. browser_search has
         // no domain filter, so the source rule lives in the SEARCH section of the prompt.
         ...(withSearch ? { tools: [{ type: "browser_search" }], tool_choice: "auto" } : {}),
@@ -507,15 +518,18 @@ export const askAssistant = createServerFn({ method: "POST" })
         ],
       });
 
-    // groq/compound-mini was decommissioned by Groq on 2026-09-21 with no successor. Web
-    // search now comes from the built-in `browser_search` tool of gpt-oss. The same model
-    // is listed again without search, so a failure of the search tool (unsupported on the
-    // plan, timeout, 400) degrades to an offline answer instead of the failure message.
+    // Free-plan limits are per model, so every extra model is an extra 8K tokens/minute.
+    // qwen3.8-27b is a Groq preview model: if it is withdrawn it returns 404 and the
+    // cascade simply moves on.
     const ALL_CANDIDATES = [
       { model: "openai/gpt-oss-120b", withSearch: true },
       { model: "openai/gpt-oss-120b", withSearch: false },
+      { model: "qwen/qwen3.8-27b", withSearch: false },
       { model: "openai/gpt-oss-20b", withSearch: false },
     ];
+    // Search costs extra tokens and is only worth it when the knowledge base found nothing
+    // or the question is about dates, deadlines or announcements.
+    const potrzebaSzukania = wybor.wpisy.length === 0 || TIME_SENSITIVE.test(lastUser);
 
     // Diagnostic trace: what each model actually did on this request. It is attached to the
     // thrown error, so a failure can be read off the response instead of being guessed at.
@@ -523,6 +537,7 @@ export const askAssistant = createServerFn({ method: "POST" })
     const short = (model: string) => model.split("/").pop() ?? model;
 
     const candidates = ALL_CANDIDATES.filter((c) => {
+      if (c.withSearch && !potrzebaSzukania) return false;
       if (isCooling(c.model)) {
         trace.push(`${short(c.model)}:cooldown`);
         return false;

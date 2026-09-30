@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 /**
  * Weekly automated "news drafts" pipeline.
  *
- * Fetches two official announcement sources, skips anything already present in
+ * Fetches the UdSC announcements list on gov.pl, skips anything already present in
  * `news` (dedup on source_url), asks the LLM for a strictly factual uk/pl/en
  * summary of each new item and inserts the result as UNPUBLISHED drafts.
  * Nothing here ever publishes a row.
@@ -15,7 +15,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 const JOB_NAME = "news-digest";
 const MAX_ITEMS = 5;
-const MAX_AGE_DAYS = 21;
+const MAX_AGE_DAYS = 35; // one failed weekly run must not lose an announcement for good
 const LOCK_MINUTES = 10;
 const UA = "Mozilla/5.0 (compatible; SmartLegalizationBot/1.0)";
 const MODEL = "openai/gpt-oss-120b";
@@ -264,7 +264,11 @@ export const Route = createFileRoute("/api/public/hooks/news-digest")({
           for (const item of fresh) {
             try {
               const detail = await fetchText(item.url);
-              const pageText = detail ? stripTags(detail).slice(0, 6000) : item.intro;
+              // gov.pl pages open with ~2.5k characters of portal navigation; the announcement
+              // itself is inside <article>. Sending the page from the top gave the model only the
+              // menu, so every item came back "insufficient" (Sept 2026: nothing drafted for weeks).
+              const articleHtml = detail ? /<article[\s\S]*?<\/article>/i.exec(detail)?.[0] ?? detail : "";
+              const pageText = articleHtml ? stripTags(articleHtml).slice(0, 6000) : item.intro;
               if (!pageText || pageText.length < 80) {
                 skipped.push(`${item.url} (no text)`);
                 continue;
@@ -310,7 +314,10 @@ export const Route = createFileRoute("/api/public/hooks/news-digest")({
             }
           }
 
-          await finish(`ok: ${inserted} drafted, ${skipped.length} skipped`);
+          await finish(
+            `ok: ${inserted} drafted, ${skipped.length} skipped` +
+              (skipped.length ? ` — ${skipped.join("; ")}`.slice(0, 900) : ""),
+          );
           return Response.json({ inserted, drafts: inserted * 3, skipped });
         } catch (err) {
           if (err instanceof AiBlocked) {

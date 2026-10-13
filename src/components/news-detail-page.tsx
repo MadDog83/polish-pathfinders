@@ -5,6 +5,7 @@ import { ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getDict, localePath, type Locale } from "@/i18n";
 import { getNewsBySlug } from "@/lib/news.functions";
+import { jsonLd } from "@/lib/utils";
 
 export function NewsDetailPage({ locale, slug }: { locale: Locale; slug: string }) {
   const t = getDict(locale);
@@ -48,7 +49,7 @@ export function NewsDetailPage({ locale, slug }: { locale: Locale; slug: string 
           <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{
-              __html: JSON.stringify({
+              __html: jsonLd({
                 "@context": "https://schema.org",
                 "@type": "NewsArticle",
                 headline: data.title,

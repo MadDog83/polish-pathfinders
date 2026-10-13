@@ -9,7 +9,15 @@ import { getDict, SITE_NAME } from "@/i18n";
 
 function safeNext(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
-  if (!value.startsWith("/") || value.startsWith("//")) return undefined;
+  if (!value.startsWith("/")) return undefined;
+  // Browsers read "/\evil.com" and "/\t/evil.com" as "//evil.com", so a prefix check alone
+  // is not enough: resolve the path the way the browser will and require the same origin.
+  try {
+    const base = "https://same-origin.invalid";
+    if (new URL(value, base).origin !== base) return undefined;
+  } catch {
+    return undefined;
+  }
   return value;
 }
 

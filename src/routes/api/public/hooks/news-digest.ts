@@ -88,6 +88,15 @@ function slugify(input: string): string {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/** String comparison whose running time does not reveal how many leading characters match. */
+function timingSafeEqual(a: string, b: string): boolean {
+  const x = new TextEncoder().encode(a);
+  const y = new TextEncoder().encode(b);
+  let diff = x.length ^ y.length;
+  for (let i = 0; i < Math.max(x.length, y.length); i++) diff |= (x[i] ?? 0) ^ (y[i] ?? 0);
+  return diff === 0;
+}
+
 type Summary = { title: string; summary: string };
 type LlmResult = Record<"uk" | "pl" | "en", Summary>;
 
@@ -178,13 +187,25 @@ export const Route = createFileRoute("/api/public/hooks/news-digest")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        // The publishable key is public (it ships in the browser bundle), so it only proves
+        // the caller read the site's JavaScript. NEWS_DIGEST_SECRET is a real secret; once it
+        // is set, it is the only accepted credential. Without it the old check stays, so the
+        // weekly cron keeps running until it is switched over to the secret.
+        const secret = process.env["NEWS_DIGEST_SECRET"];
         const expected =
-          process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["SUPABASE_ANON_KEY"] ?? "";
+          secret ??
+          process.env["SUPABASE_PUBLISHABLE_KEY"] ??
+          process.env["SUPABASE_ANON_KEY"] ??
+          "";
+        if (!secret) {
+          console.warn("[news-digest] NEWS_DIGEST_SECRET not set; accepting the public key");
+        }
         const provided =
+          request.headers.get("x-cron-secret") ??
           request.headers.get("apikey") ??
           request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
           "";
-        if (!expected || provided !== expected) {
+        if (!expected || !timingSafeEqual(provided, expected)) {
           return Response.json({ error: "Unauthorized" }, { status: 401 });
         }
 

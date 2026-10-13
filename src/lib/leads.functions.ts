@@ -16,6 +16,11 @@ export const submitLead = createServerFn({ method: "POST" })
     if (!data.email && !data.phone) {
       throw new Error("Provide email or phone");
     }
+    const { enforceRateLimit } = await import("@/lib/rate-limit.server");
+    enforceRateLimit("lead", [
+      { max: 3, windowMs: 10 * 60_000 },
+      { max: 10, windowMs: 24 * 60 * 60_000 },
+    ]);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("leads").insert({
       name: data.name,

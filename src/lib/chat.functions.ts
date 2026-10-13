@@ -434,6 +434,15 @@ export const askAssistant = createServerFn({ method: "POST" })
     const apiKey = process.env["GROQ_API_KEY"];
     if (!apiKey) throw new Error("GROQ_API_KEY missing");
 
+    // One question can cost up to six Groq calls through the fallback cascade, and the
+    // free-plan quota is shared by every visitor and the news digest. A person asks a
+    // question every few dozen seconds at most; a script must not drain the quota.
+    const { enforceRateLimit } = await import("@/lib/rate-limit.server");
+    enforceRateLimit("chat", [
+      { max: 5, windowMs: 60_000 },
+      { max: 30, windowMs: 60 * 60_000 },
+    ]);
+
     const { buildSystemPrompt, getLegalIndex, selectLegalSections } = await import(
       "@/lib/chat-kb.server"
     );

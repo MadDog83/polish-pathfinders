@@ -18,9 +18,10 @@ import { submitLead } from "@/lib/leads.functions";
 import { askAssistant } from "@/lib/chat.functions";
 import { useIsMobile } from "@/hooks/use-mobile";
 import ReactMarkdown from "react-markdown";
+import { useTypewriter } from "@/components/chat/typewriter";
 
 type Msg =
-  | { role: "bot"; kind: "text"; text: string }
+  | { role: "bot"; kind: "text"; text: string; typing?: boolean }
   | { role: "bot"; kind: "intro" }
   | { role: "bot"; kind: "links" }
   | { role: "user"; kind: "text"; text: string };
@@ -88,6 +89,21 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, showForm, revealed, thinking, minimized]);
 
+  const finishTyping = useCallback((index: number) => {
+    setMessages((ms) =>
+      ms.map((m, i) =>
+        i === index && m.role === "bot" && m.kind === "text" ? { ...m, typing: false } : m,
+      ),
+    );
+  }, []);
+
+  // Follows a reply while it is being typed out, unless the reader has scrolled up.
+  const keepPinned = useCallback(() => {
+    const el = scrollRef.current;
+    if (el && el.scrollHeight - el.scrollTop - el.clientHeight < 150)
+      el.scrollTop = el.scrollHeight;
+  }, []);
+
   const onDragStart = useCallback(
     (e: React.PointerEvent) => {
       if ((e.target as HTMLElement).closest("button")) return;
@@ -138,7 +154,7 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
       // the browser console next to the existing "[assistant]" error line.
       console.info("[assistant] model:", res.trace ?? "?", "| baza:", res.baza ?? "?");
       historyRef.current = [...historyRef.current, { role: "assistant" as const, content: res.text }].slice(-12);
-      setMessages((m) => [...m, { role: "bot", kind: "text", text: res.text }]);
+      setMessages((m) => [...m, { role: "bot", kind: "text", text: res.text, typing: true }]);
     } catch (err) {
       // The request failed, so this turn has no answer — drop it from the history,
       // otherwise the next request carries two user questions and both get answered.
@@ -153,7 +169,7 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
         : idx !== null
           ? getDict(locale).faq.items[idx].a
           : t.noMatch;
-      setMessages((m) => [...m, { role: "bot", kind: "text", text: fallback }]);
+      setMessages((m) => [...m, { role: "bot", kind: "text", text: fallback, typing: true }]);
     } finally {
 
       setThinking(false);
@@ -226,7 +242,7 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
 
       <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto overflow-x-hidden px-4 py-4">
         {messages.map((m, i) => (
-          <MessageBubble key={i} m={m} t={t} />
+          <MessageBubble key={i} m={m} t={t} onTyped={() => finishTyping(i)} onProgress={keepPinned} />
         ))}
         {showForm && !revealed && (
           <LeadForm
@@ -321,7 +337,17 @@ export function ChatbotPanel({ open, onOpenChange }: ChatbotPanelProps) {
   );
 }
 
-function MessageBubble({ m, t }: { m: Msg; t: ReturnType<typeof getDict>["chatbot"] }) {
+function MessageBubble({
+  m,
+  t,
+  onTyped,
+  onProgress,
+}: {
+  m: Msg;
+  t: ReturnType<typeof getDict>["chatbot"];
+  onTyped: () => void;
+  onProgress: () => void;
+}) {
   if (m.role === "user") {
     return (
       <div className="flex min-w-0 justify-end gap-2">
@@ -372,17 +398,38 @@ function MessageBubble({ m, t }: { m: Msg; t: ReturnType<typeof getDict>["chatbo
         {m.kind === "intro" ? (
           `${t.subtitle} — ${t.disclaimer}`
         ) : (
-          <div className="space-y-2 [&_a]:break-all [&_a]:text-primary [&_a]:underline [&_li]:ml-4 [&_li]:list-disc [&_strong]:font-semibold">
-            <ReactMarkdown
-              components={{
-                a: ({ node, ...props }) => <a {...props} target="_blank" rel="noreferrer" />,
-              }}
-            >
-              {m.text}
-            </ReactMarkdown>
-          </div>
+          <BotText text={m.text} typing={!!m.typing} onDone={onTyped} onProgress={onProgress} />
         )}
       </div>
+    </div>
+  );
+}
+
+function BotText({
+  text,
+  typing,
+  onDone,
+  onProgress,
+}: {
+  text: string;
+  typing: boolean;
+  onDone: () => void;
+  onProgress: () => void;
+}) {
+  const visible = useTypewriter(text, typing, onDone, onProgress);
+  return (
+    <div
+      aria-busy={typing}
+      onClick={typing ? onDone : undefined}
+      className="space-y-2 [&_a]:break-all [&_a]:text-primary [&_a]:underline [&_li]:ml-4 [&_li]:list-disc [&_strong]:font-semibold"
+    >
+      <ReactMarkdown
+        components={{
+          a: ({ node, ...props }) => <a {...props} target="_blank" rel="noreferrer" />,
+        }}
+      >
+        {visible}
+      </ReactMarkdown>
     </div>
   );
 }

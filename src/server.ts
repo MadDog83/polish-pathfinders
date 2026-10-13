@@ -35,6 +35,29 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
   });
 }
 
+// No other site may embed these pages in a frame: a hidden frame over the sign-in or the
+// OAuth consent page can trick a signed-in user into clicking "approve" (clickjacking).
+// The Lovable editor shows its preview in a frame, so lovable.dev stays allowed. Lovable
+// hosting already sends HSTS, nosniff and Referrer-Policy; this is the one header missing.
+const FRAME_ANCESTORS = "frame-ancestors 'self' https://lovable.dev https://*.lovable.dev";
+
+function withSecurityHeaders(response: Response): Response {
+  if (response.headers.has("content-security-policy")) return response;
+  try {
+    response.headers.set("content-security-policy", FRAME_ANCESTORS);
+    return response;
+  } catch {
+    // Headers of some responses are immutable; copy them into a new response instead.
+    const headers = new Headers(response.headers);
+    headers.set("content-security-policy", FRAME_ANCESTORS);
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
+    });
+  }
+}
+
 function isH3SwallowedErrorBody(body: string): boolean {
   try {
     const payload = JSON.parse(body) as { unhandled?: unknown; message?: unknown };
@@ -49,13 +72,15 @@ export default {
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response);
+      return withSecurityHeaders(await normalizeCatastrophicSsrResponse(response));
     } catch (error) {
       console.error(error);
-      return new Response(renderErrorPage(), {
-        status: 500,
-        headers: { "content-type": "text/html; charset=utf-8" },
-      });
+      return withSecurityHeaders(
+        new Response(renderErrorPage(), {
+          status: 500,
+          headers: { "content-type": "text/html; charset=utf-8" },
+        }),
+      );
     }
   },
 };

@@ -28,7 +28,11 @@ export const listNewsPublic = createServerFn({ method: "GET" })
       .eq("is_published", true)
       .order("published_at", { ascending: false })
       .limit(data.limit ?? 20);
-    if (error) throw new Error(error.message);
+    if (error) {
+      // Database messages describe the schema; they go to the server log, not the visitor.
+      console.error("[news] list failed:", error.message);
+      throw new Error("News unavailable");
+    }
     return rows ?? [];
   });
 
@@ -43,7 +47,10 @@ export const getNewsBySlug = createServerFn({ method: "GET" })
       .eq("language", data.language)
       .eq("is_published", true)
       .maybeSingle();
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error("[news] get failed:", error.message);
+      throw new Error("News unavailable");
+    }
     return row;
   });
 

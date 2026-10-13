@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { getDict, LOCALES, SITE_NAME } from "@/i18n";
 
 // groq/compound-mini enforces a small per-request size limit (413 request_too_large),
@@ -13,24 +14,47 @@ const INDEX_URL =
   "https://raw.githubusercontent.com/MadDog83/kb-smartlegal/main/index/kb-index.json";
 const INDEX_TTL_MS = 6 * 60 * 60 * 1000;
 
-export type WpisBazy = {
-  id: string;
-  tytul: string;
-  ustawa: string | null;
-  artykuly: string[];
-  artykuly_zakazane: string[];
+// The index comes from another repository at runtime, so its shape is checked here rather
+// than trusted: one malformed entry used to be able to throw inside topic selection and
+// take the whole assistant down. Bad entries are dropped and logged; the rest still serve.
+const WpisSchema = z.object({
+  id: z.string().min(1),
+  tytul: z.string().min(1),
+  ustawa: z.string().nullable(),
+  artykuly: z.array(z.string()),
+  artykuly_zakazane: z.array(z.string()),
   /** Topics that must never share a prompt with this one — see the selection loop. */
-  wyklucza?: string[];
-  organ: string | null;
-  ryzyko: string;
-  slowa: string[];
-  tresc: string;
-};
+  wyklucza: z.array(z.string()).optional(),
+  organ: z.string().nullable(),
+  ryzyko: z.string(),
+  slowa: z.array(z.string()),
+  tresc: z.string().min(1),
+});
+const ArtykulyUstawSchema = z.record(z.string(), z.array(z.string()));
+
+export type WpisBazy = z.infer<typeof WpisSchema>;
 
 export type IndeksBazy = {
   wpisy: WpisBazy[];
   artykulyUstaw: Record<string, string[]>;
 };
+
+/** Keeps the entries that match the schema; null when nothing usable is left. */
+function parseIndex(raw: unknown): IndeksBazy | null {
+  const obj = (raw ?? {}) as { wpisy?: unknown; artykulyUstaw?: unknown };
+  if (!Array.isArray(obj.wpisy)) return null;
+  const wpisy: WpisBazy[] = [];
+  for (const [i, item] of obj.wpisy.entries()) {
+    const parsed = WpisSchema.safeParse(item);
+    if (parsed.success) wpisy.push(parsed.data);
+    else console.warn(`[kb-index] entry ${i} dropped:`, parsed.error.issues[0]?.message);
+  }
+  if (!wpisy.length) return null;
+  const mapa = ArtykulyUstawSchema.safeParse(obj.artykulyUstaw);
+  if (!mapa.success)
+    console.warn("[kb-index] artykulyUstaw invalid; act names will not be attached");
+  return { wpisy, artykulyUstaw: mapa.success ? mapa.data : {} };
+}
 
 let indeksCache: { dane: IndeksBazy; at: number } | null = null;
 
@@ -44,8 +68,8 @@ export async function getLegalIndex(): Promise<IndeksBazy | null> {
       signal: AbortSignal.timeout(8000),
     });
     if (!r.ok) return indeksCache?.dane ?? null;
-    const dane = (await r.json()) as IndeksBazy;
-    if (!Array.isArray(dane?.wpisy) || dane.wpisy.length === 0) return indeksCache?.dane ?? null;
+    const dane = parseIndex(await r.json());
+    if (!dane) return indeksCache?.dane ?? null;
     indeksCache = { dane, at: now };
     return dane;
   } catch {

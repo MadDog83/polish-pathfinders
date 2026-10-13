@@ -30,6 +30,10 @@ export const submitLead = createServerFn({ method: "POST" })
       language: data.language,
       consent: data.consent,
     });
-    if (error) throw new Error(error.message);
+    if (error) {
+      // Database messages describe the schema; they go to the server log, not the visitor.
+      console.error("[leads] insert failed:", error.message);
+      throw new Error("Could not save the request");
+    }
     return { ok: true };
   });

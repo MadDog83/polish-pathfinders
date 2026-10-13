@@ -45,13 +45,16 @@
 - Migrations pushed through git may not be applied automatically. Tell the user to
   apply and verify every new migration.
 - Every new table: RLS enabled, explicit policies, explicit grants.
-- In policies, check admin with `EXISTS (SELECT 1 FROM public.user_roles ...)`, not
-  `private.has_role` (the `authenticated` role cannot execute it).
+- In policies, check admin with `private.has_role(auth.uid(), 'admin')` (SECURITY DEFINER,
+  executable by `authenticated`). Never query `user_roles` directly inside a `user_roles`
+  policy: that recurses. Keep the `private` schema out of the API-exposed schemas.
 - `anon` must never get INSERT on `leads`; only `submitLead` writes leads.
 
 ## Assistant
-- Legal content lives in `MadDog83/kb-smartlegal` and is fetched at runtime. Fix legal
-  facts there, not here. Do not extend `src/lib/legal-kb.server.ts` (unused).
+- Legal content lives in `MadDog83/kb-smartlegal` and is fetched at runtime from `main`.
+  Fix legal facts there, not here; never reintroduce a legal base inside this repo.
+  Index entries are schema-checked on load: when the index format changes, update
+  `WpisSchema` in `src/lib/chat-kb.server.ts` in the same change.
 - The model must never introduce URLs. Links come only from `[LAW:...]` / `[ELI:...]`
   markers expanded from the whitelists. Add a URL to a whitelist only after verifying
   it: a wrong link is worse than no link. Article numbers not found in the selected
@@ -77,3 +80,5 @@
 - Post-login redirects only through `safeNext`.
 - Contact details (email, phone, Telegram) never in server-rendered HTML; client-only chat panel.
 - Never enable raw HTML in `react-markdown`.
+- Keep `frame-ancestors` in `src/server.ts`; add a host there only if it must embed the site.
+- Public server functions log database errors and return a generic message.

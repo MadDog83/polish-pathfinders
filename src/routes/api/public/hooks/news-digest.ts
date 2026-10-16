@@ -22,6 +22,71 @@ const MODEL = "openai/gpt-oss-120b";
 
 const UDSC_LIST = "https://www.gov.pl/web/udsc/aktualnosci-udsc";
 
+// Fixed renderings for Polish administrative terms. Every entry answers a real mistake in
+// published drafts (Oct 2026): "Urząd informuje" became "Уряд повідомив" (the government),
+// "subkonto" became "підрахунок" (a calculation), "na wniosek Prezesa Rady Ministrów" became
+// "на підставі постанови" (by decree). The Ukrainian side follows the wording the site
+// already uses (src/i18n), so drafts and pages say the same thing.
+const GLOSSARY: [pl: string, uk: string, en: string][] = [
+  ["urząd (the office that publishes)", "управління / установа — NEVER «уряд»", "the Office"],
+  [
+    "Urząd do Spraw Cudzoziemców (UdSC)",
+    "Управління у справах іноземців (UdSC)",
+    "Office for Foreigners (UdSC)",
+  ],
+  ["Urząd Wojewódzki", "воєводське управління", "Voivodeship Office"],
+  ["wojewoda", "воєвода", "voivode"],
+  ["rząd", "уряд", "the government"],
+  ["Prezes Rady Ministrów", "Голова Ради міністрів", "the Prime Minister"],
+  ["karta pobytu", "карта побиту", "residence card"],
+  [
+    "zezwolenie na pobyt czasowy / stały",
+    "дозвіл на тимчасове / постійне перебування",
+    "temporary / permanent residence permit",
+  ],
+  ["rezydent długoterminowy UE", "довгостроковий резидент ЄС", "EU long-term resident"],
+  [
+    "wniosek; złożyć wniosek",
+    "заява; подати заяву (подання, NOT «подача»)",
+    "application; submit an application",
+  ],
+  [
+    "na wniosek X",
+    "на прохання X / за поданням X — NEVER «на підставі постанови»",
+    "at the request of X",
+  ],
+  ["decyzja / postanowienie", "рішення / постанова (procedural)", "decision / procedural order"],
+  ["odwołanie", "оскарження (апеляція)", "appeal"],
+  [
+    "ochrona czasowa / międzynarodowa",
+    "тимчасовий / міжнародний захист",
+    "temporary / international protection",
+  ],
+  [
+    "obowiązki wojskowe",
+    "військові обов'язки (NOT «військова служба»)",
+    "military obligations (NOT military service)",
+  ],
+  [
+    "konto; subkonto",
+    "обліковий запис; субакаунт — NEVER «рахунок», «підрахунок»",
+    "account; sub-account",
+  ],
+  ["Genewski Dokument Podróży", "Женевський проїзний документ", "Geneva Travel Document"],
+  ["e-Doręczenia", "e-Doręczenia (keep the name)", "e-Doręczenia (e-delivery)"],
+  [
+    "Ministerstwo Obrony Narodowej",
+    "Міністерство національної оборони",
+    "Ministry of National Defence",
+  ],
+  [
+    "Ministerstwo Spraw Wewnętrznych i Administracji",
+    "Міністерство внутрішніх справ і адміністрації",
+    "Ministry of the Interior and Administration",
+  ],
+  ["Rządowe Centrum Bezpieczeństwa", "Урядовий центр безпеки", "Government Centre for Security"],
+];
+
 type Item = { title: string; url: string; date: string | null; intro: string };
 
 const stripTags = (html: string) =>
@@ -128,6 +193,10 @@ async function summarize(apiKey: string, item: Item, pageText: string): Promise<
     '{"insufficient": false, "uk": {"title": "...", "summary": "..."}, "pl": {"title": "...", "summary": "..."}, "en": {"title": "...", "summary": "..."}}',
     "Each title: short factual headline (max 110 characters). Each summary: 2-3 sentences.",
     "uk = Ukrainian, pl = Polish, en = English. Same facts in all three.",
+    "- Never add who said or urged something unless the source names them.",
+    "- Names of portal buttons and sections (MOS, inPOL) stay in Polish in quotes; in uk and en add a translation in brackets.",
+    "TERMINOLOGY — always use exactly these renderings (Polish → Ukrainian → English):",
+    ...GLOSSARY.map(([pl, uk, en]) => `- ${pl} → ${uk} → ${en}`),
   ].join("\n");
 
   const call = () => fetch("https://api.groq.com/openai/v1/chat/completions", {

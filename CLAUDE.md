@@ -72,6 +72,8 @@
 
 ## News digest
 - It only creates drafts (`is_published = false`). Never auto-publish.
+- Translations follow `GLOSSARY` in `news-digest.ts`. When a draft repeats a wrong term, add
+  the correct rendering there (matching the wording in `src/i18n`) instead of only fixing the row.
 - Auth is the `x-cron-secret` header = `NEWS_DIGEST_SECRET`. Accepting the public key
   while the secret is unset is transitional only; do not widen it.
 

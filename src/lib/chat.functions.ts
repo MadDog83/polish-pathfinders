@@ -324,6 +324,11 @@ function sanitizeCitations(
   // "[**" and "**]" around the link. Keep the link, drop the wrapper.
   out = out.replace(/\[\s*\*{0,2}\s*(\[[^\]]+\]\([^)]+\))\s*\*{0,2}\s*\]/g, "$1");
 
+  // 3a'. With search on, the model cites this site's own FAQ in brackets
+  // ("…180-day period[FAQ:Does a residence card allow me to travel?]"), and 3b below
+  // would unwrap that into visible text. The FAQ is not a source; the citation goes whole.
+  out = out.replace(/\[\s*(?:FAQ|F\.A\.Q\.|ЧаПи?)(?=[\s:\]])[^\]]*\]/gi, "");
+
   // 3b. Anything still in single square brackets is neither a verified link nor a
   // recognized marker — the model wrote an ad-hoc citation-style aside that doesn't map
   // to anything real. Unwrap it to plain text instead of leaking raw brackets to the user.
@@ -536,8 +541,6 @@ export const askAssistant = createServerFn({ method: "POST" })
     // cascade simply moves on.
     const ALL_CANDIDATES = [
       { model: "openai/gpt-oss-120b", withSearch: true },
-      // Its own per-model quota, so a 429 on the large model still leaves a searching answer.
-      { model: "openai/gpt-oss-20b", withSearch: true },
       { model: "openai/gpt-oss-120b", withSearch: false },
       { model: "qwen/qwen3.8-27b", withSearch: false },
       { model: "openai/gpt-oss-20b", withSearch: false },
@@ -551,6 +554,11 @@ export const askAssistant = createServerFn({ method: "POST" })
     // confirm, check gov.pl" for waiting times, document lists and benefits, or an answer
     // from memory. The quota allows it: the site had 27 visitors in the 30 days before.
     // The answering call's token count rides in the trace, so the cost is measured, not assumed.
+    // Only the 120b model searches. gpt-oss-20b with search was tried as a second searching
+    // model the same day and removed within the hour: it took facts from unofficial pages
+    // (a blog's "6-12 months" for Warsaw), got 800+ wrong (an income test, ePUAP, a 30-45
+    // day deadline — none of it true), garbled Ukrainian, and used up to 57,000 tokens
+    // per answer. A wrong answer is worse than "cannot confirm".
 
     // Diagnostic trace: what each model actually did on this request. It is attached to the
     // thrown error, so a failure can be read off the response instead of being guessed at.

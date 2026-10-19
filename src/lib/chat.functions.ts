@@ -268,6 +268,10 @@ function sanitizeCitations(
   // brackets (【 】) instead of ASCII ones — normalize before parsing so those markers
   // still get expanded into real links (or stripped) like normal ones, instead of
   // leaking through unprocessed.
+  // browser_search answers can carry the tool's own source marks ("【2†L119-L124】"). They
+  // point into the model's browsing session, not at anything the user can open, so they go
+  // before the bracket normalization below would turn them into visible text.
+  out = out.replace(/【[^】]*†[^】]*】/g, "");
   out = out.replace(/[【】]/g, (m) => (m === "【" ? "[" : "]"));
 
 
@@ -532,13 +536,21 @@ export const askAssistant = createServerFn({ method: "POST" })
     // cascade simply moves on.
     const ALL_CANDIDATES = [
       { model: "openai/gpt-oss-120b", withSearch: true },
+      // Its own per-model quota, so a 429 on the large model still leaves a searching answer.
+      { model: "openai/gpt-oss-20b", withSearch: true },
       { model: "openai/gpt-oss-120b", withSearch: false },
       { model: "qwen/qwen3.8-27b", withSearch: false },
       { model: "openai/gpt-oss-20b", withSearch: false },
     ];
-    // Search costs extra tokens and is only worth it when the knowledge base found nothing
-    // or the question is about dates, deadlines or announcements.
-    const potrzebaSzukania = wybor.wpisy.length === 0 || TIME_SENSITIVE.test(lastUser);
+    // Every request is offered search first; the SEARCH section of the prompt decides when the
+    // model must use it. Search used to be offered only when the knowledge base matched
+    // nothing or the question had a date word in it. Measured on 2026-10-19 with 12 real
+    // questions: search ran for 2. Topic selection almost always returns something — for
+    // "800+ for a child with a residence card" it returned three unrelated topics — so the
+    // gate stayed shut exactly where the base has no answer, and the user got "I cannot
+    // confirm, check gov.pl" for waiting times, document lists and benefits, or an answer
+    // from memory. The quota allows it: the site had 27 visitors in the 30 days before.
+    // The answering call's token count rides in the trace, so the cost is measured, not assumed.
 
     // Diagnostic trace: what each model actually did on this request. It is attached to the
     // thrown error, so a failure can be read off the response instead of being guessed at.
@@ -546,7 +558,6 @@ export const askAssistant = createServerFn({ method: "POST" })
     const short = (model: string) => model.split("/").pop() ?? model;
 
     const candidates = ALL_CANDIDATES.filter((c) => {
-      if (c.withSearch && !potrzebaSzukania) return false;
       if (isCooling(c.model)) {
         trace.push(`${short(c.model)}:cooldown`);
         return false;
@@ -562,6 +573,12 @@ export const askAssistant = createServerFn({ method: "POST" })
     let text = "";
     outer: for (const candidate of candidates) {
       const nazwa = short(candidate.model) + (candidate.withSearch ? "+search" : "");
+      // The same model appears twice in the cascade (with and without search): once it has
+      // returned 429 in this request, asking it again only adds another rejected call.
+      if (isCooling(candidate.model)) {
+        trace.push(`${nazwa}:cooldown`);
+        continue;
+      }
       const body = buildBody(candidate.model, candidate.withSearch);
       for (let attempt = 0; attempt < 3; attempt++) {
         try {
@@ -588,10 +605,12 @@ export const askAssistant = createServerFn({ method: "POST" })
         if (res.ok) {
           const json = (await res.json()) as {
             choices?: { message?: { content?: string } }[];
+            usage?: { total_tokens?: number };
           };
           text = (json.choices?.[0]?.message?.content ?? "").trim();
           if (text) {
-            trace.push(`${nazwa}:ok`);
+            const tokens = json.usage?.total_tokens;
+            trace.push(`${nazwa}:ok${tokens ? ` ${tokens}t` : ""}`);
             break outer;
           }
           // Empty content: let the next model try. Never fall back to the model's raw

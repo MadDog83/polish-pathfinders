@@ -3,7 +3,8 @@ import { createFileRoute } from "@tanstack/react-router";
 /**
  * Weekly automated "news drafts" pipeline.
  *
- * Fetches the UdSC announcements list on gov.pl, skips anything already present in
+ * Fetches the UdSC announcements list on gov.pl and the WSC Mazowieckie announcements
+ * list, skips anything already present in
  * `news` (dedup on source_url), asks the LLM for a strictly factual uk/pl/en
  * summary of each new item and inserts the result as UNPUBLISHED drafts.
  * Nothing here ever publishes a row.
@@ -21,6 +22,10 @@ const UA = "Mozilla/5.0 (compatible; SmartLegalizationBot/1.0)";
 const MODEL = "openai/gpt-oss-120b";
 
 const UDSC_LIST = "https://www.gov.pl/web/udsc/aktualnosci-udsc";
+// The voivodeship office posts what UdSC never does: the new certificate that replaced the
+// passport stamp (19.10.2026) appeared only here, so a UdSC-only run reported "0 new".
+const WSC_BASE = "https://migrant.wsc.mazowieckie.pl";
+const WSC_LIST = `${WSC_BASE}/pl/komunikaty`;
 
 // Fixed renderings for Polish administrative terms. Every entry answers a real mistake in
 // published drafts (Oct 2026): "Urząd informuje" became "Уряд повідомив" (the government),
@@ -85,6 +90,13 @@ const GLOSSARY: [pl: string, uk: string, en: string][] = [
     "Ministry of the Interior and Administration",
   ],
   ["Rządowe Centrum Bezpieczeństwa", "Урядовий центр безпеки", "Government Centre for Security"],
+  [
+    "Wydział Spraw Cudzoziemców (WSC) Mazowieckiego Urzędu Wojewódzkiego",
+    "Відділ у справах іноземців (WSC) Мазовецького воєводського управління",
+    "Foreigners' Department (WSC) of the Mazowieckie Voivodeship Office",
+  ],
+  ["Sobota Informacyjna", "Інформаційна субота", "Information Saturday"],
+  ["zaświadczenie", "довідка", "certificate"],
 ];
 
 type Item = { title: string; url: string; date: string | null; intro: string };
@@ -134,6 +146,31 @@ function parseUdsc(html: string): Item[] {
     });
   }
   return items.filter((i) => i.title.length > 5);
+}
+
+/**
+ * WSC Mazowieckie list page: `<div class="views-row">` + `<h2 class="title"><a href>` +
+ * `<div class="date">DD.MM.YYYY</div>` + `<div class="teaser">`. Entries titled
+ * "Komunikat Urzędu do Spraw Cudzoziemców - …" repost UdSC announcements under another URL;
+ * the UdSC source already drafts those, and taking them here too would draft them twice.
+ */
+function parseWsc(html: string): Item[] {
+  const items: Item[] = [];
+  for (const block of html.split(/<div class="views-row/i).slice(1)) {
+    const link = /<h2 class="title">\s*<a[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/i.exec(block);
+    if (!link) continue;
+    const dateRaw = /<div class="date">\s*(\d{2})\.(\d{2})\.(\d{4})/i.exec(block);
+    const teaser = /<div class="teaser">([\s\S]*?)<\/div>/i.exec(block);
+    items.push({
+      title: stripTags(link[2] ?? ""),
+      url: link[1]!.startsWith("http") ? link[1]! : `${WSC_BASE}${link[1]}`,
+      date: dateRaw ? `${dateRaw[3]}-${dateRaw[2]}-${dateRaw[1]}` : null,
+      intro: stripTags(teaser?.[1] ?? ""),
+    });
+  }
+  return items.filter(
+    (i) => i.title.length > 5 && !/^komunikat urz[ęe]du do spraw cudzoziemc/i.test(i.title),
+  );
 }
 
 
@@ -325,8 +362,15 @@ export const Route = createFileRoute("/api/public/hooks/news-digest")({
             return Response.json({ error: "GROQ_API_KEY missing" }, { status: 500 });
           }
 
-          const udscHtml = await fetchText(UDSC_LIST);
-          const candidates: Item[] = udscHtml ? parseUdsc(udscHtml) : [];
+          // Either source failing leaves the other one working.
+          const [udscHtml, wscHtml] = await Promise.all([
+            fetchText(UDSC_LIST),
+            fetchText(WSC_LIST),
+          ]);
+          const candidates: Item[] = [
+            ...(udscHtml ? parseUdsc(udscHtml) : []),
+            ...(wscHtml ? parseWsc(wscHtml) : []),
+          ];
           if (!candidates.length) {
             await finish("no items parsed");
             return Response.json({ inserted: 0, note: "no items parsed" });

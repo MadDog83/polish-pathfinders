@@ -9,6 +9,15 @@
 - Do not add Vite plugins that `@lovable.dev/vite-tanstack-config` already provides
   (TanStack Start, React, Tailwind, tsconfig paths, nitro): duplicates break the app.
 - `.lovable/plan.md` is outdated. Trust the code.
+- Before a PR is merged, check for Lovable edits that have not reached GitHub: fetch `main`
+  and confirm the Lovable project's `latest_commit_sha` exists there. If it does not, the
+  user must let it sync first; merging over it makes Lovable report "push replaced your
+  Lovable work" and the edit is lost.
+- Once a PR is reported ready, push nothing more to its branch; put later work in a new PR.
+  After a merge, confirm every commit reached `main` (`git merge-base --is-ancestor`): a
+  commit pushed while the user was merging was left out once already.
+- `main` changes reach the live site only after Publish → Update in Lovable. Confirm the
+  live site serves a change before testing it there.
 
 ## Tooling
 - `bun install` fails outside Lovable (`bun.lock` points to a private registry, 403). Use
@@ -25,6 +34,8 @@
   `STATIC_PATHS` in the sitemap route.
 - A new UI string goes into the `Dict` interface and all three dictionaries.
 - Never translate `SITE_NAME`.
+- All language rows of one news item share one `slug`: the language switcher keeps the path
+  and only swaps the prefix, so a different slug per language is a 404 after switching.
 - `SITE_URL` (i18n) and `BASE_URL` (sitemap) must stay identical.
 - No hardcoded colors; use the semantic tokens only.
 

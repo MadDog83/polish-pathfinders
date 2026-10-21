@@ -238,6 +238,7 @@ function sanitizeCitations(
   acts: EliAct[] = [],
   verified: Set<string> = new Set(),
   mapaUstaw: Record<string, string[]> = {},
+  bezUstawyOCudzoziemcach = false,
 ): string {
   const byEli = new Map(acts.map((a) => [a.eli.toUpperCase(), a]));
   const urls = [
@@ -251,6 +252,11 @@ function sanitizeCitations(
     const entry = LAW_LINKS[key];
     if (!entry) return "";
     const d = verifyDetail(String(detail).trim(), verified);
+    // A bare [LAW:USTAWA] renders as "ustawa o cudzoziemcach". When none of the selected
+    // topics is governed by that act, the bare marker only attached it to fees and
+    // citizenship rules it does not contain (21 Oct 2026: "1000 zł … ustawa o
+    // cudzoziemcach"). Dropped then — unless the user asked about acts or links.
+    if (key === "USTAWA" && !d && bezUstawyOCudzoziemcach) return "";
     const wlasciwa = key === "USTAWA" ? ustawaDla(d, mapaUstaw) : null;
     const label = wlasciwa ?? entry.label;
     const url = wlasciwa && wlasciwa !== entry.label ? ACT_URLS[wlasciwa] : entry.url;
@@ -338,7 +344,9 @@ function sanitizeCitations(
   // 3c. The model sometimes drops the space around a marker, so the expanded link runs
   // straight into the surrounding word or the next link ("3-4 tygodniekomunikaty...").
   // Insert the missing space back.
-  out = out.replace(/([^\s(\[])\[/g, "$1 [");
+  // Not after "*" or "_": "**[act](url)**" would become "** [act](url)**", which markdown
+  // no longer reads as bold, and the user saw the literal asterisks.
+  out = out.replace(/([^\s(\[*_])\[/g, "$1 [");
 
 
   // 4. Restore the parked URLs.
@@ -517,7 +525,10 @@ export const askAssistant = createServerFn({ method: "POST" })
     const indeks = await getLegalIndex();
     const wybor = indeks
       ? selectLegalSections(indeks, lastUser)
-      : { tekst: "", wpisy: [] as { artykuly: string[]; artykuly_zakazane: string[] }[] };
+      : {
+          tekst: "",
+          wpisy: [] as { artykuly: string[]; artykuly_zakazane: string[]; ustawa: string | null }[],
+        };
 
     // Only the search-capable model may be told it can search; telling a tool-less
     // model to search makes it emit a tool call that Groq rejects with 400.
@@ -712,7 +723,15 @@ export const askAssistant = createServerFn({ method: "POST" })
     // identical to a normal answer, and "is the search model serving?" had to be inferred
     // from response latency — which is guessing, not measuring. It rides along now.
     return {
-      text: sanitizeCitations(text, acts, dozwolone, indeks?.artykulyUstaw ?? {}),
+      text: sanitizeCitations(
+        text,
+        acts,
+        dozwolone,
+        indeks?.artykulyUstaw ?? {},
+        wybor.wpisy.length > 0 &&
+          !wybor.wpisy.some((w) => w.ustawa === "ustawa o cudzoziemcach") &&
+          !DOC_QUESTION.test(lastUser),
+      ),
       trace: trace.join(", "),
       baza: `${wybor.wpisy.length} tematów, ${new TextEncoder().encode(wybor.tekst).length} B`,
     };

@@ -369,6 +369,14 @@ function sanitizeCitations(
   // user like one. Cite an act or an official page, or say nothing.
   out = out.replace(/\s*\((?:FAQ|F\.A\.Q\.|ЧаПи?)[^)]*\)/gi, "");
 
+  // 4c. Phone numbers. The prompt forbids them and a searched answer still gave an office
+  // number nobody had verified (20 Oct 2026). Polish numbers only, with the word that
+  // introduces them, so the sentence does not end in "call".
+  out = out.replace(
+    /(?:\s*(?:за\s+телефоном|за\s+номером|телефон(?:ом)?|pod\s+numerem|telefon(?:em|u)?|tel\.?|phone(?:\s+number)?|by\s+phone|at)\s*:?\s*)?(?<!\d)(?:\+48[\s-]?)?(?:\(?\d{2}\)?[\s-]?\d{3}[\s-]?\d{2}[\s-]?\d{2}|\d{3}[\s-]\d{3}[\s-]\d{3})(?!\d)/gi,
+    "",
+  );
+
   // 5. Tidy leftovers from the deletions.
   out = out.replace(/\[\s*([^\]]*)\]\(\s*\)/g, "$1");
   out = out.replace(/\(\s*\)/g, "");
@@ -413,12 +421,16 @@ const isCooling = (model: string) => (modelCooldown.get(model) ?? 0) > Date.now(
 
 // Date/schedule/announcement questions in Ukrainian, Polish and English.
 const TIME_SENSITIVE =
-  /(коли|дата|дати|термін|строк|розклад|субот|оголош|комунікат|черг|найближч|актуальн|kiedy|data|termin|harmonogram|sobot|komunikat|ogłosz|kolejk|najbliższ|aktualn|when|date|deadline|schedule|saturday|announcement|queue|current|latest)/i;
+  /(коли|(?<![а-яіїєґ])дат[аиу]|термін|строк|розклад|субот|оголош|комунікат|черг|найближч|актуальн|kiedy|data|termin|harmonogram|sobot|komunikat|ogłosz|kolejk|najbliższ|aktualn|when|date|deadline|schedule|saturday|announcement|queue|current|latest)/i;
+// "дата" used to be matched anywhere in a word, so "подати" and "видати" — in most
+// questions about applying — counted as date questions and turned search on.
 
-// Cost/fee questions in Ukrainian, Polish and English — these deserve live search too,
-// but must NOT pull in the WSC announcements block below (that's for dates/queues, not fees).
-const FEE_QUESTION =
-  /(оплат|вартіст|кошту|ціна|ціну|opłat|koszt|cena|cenę|fee|price|cost)/i;
+// The knowledge base has no lists of required documents and no social-benefit or tax
+// rules, so these questions are the ones search answers better than the base.
+const DOCS_LIST_QUESTION =
+  /(які документи|яких документів|список документів|перелік документів|jakie dokumenty|jakich dokumentów|wykaz dokumentów|lista dokumentów|what documents|which documents|list of documents)/i;
+const OUTSIDE_BASE_QUESTION =
+  /(800\s?(?:\+|plus|плюс)|świadcz|zasił|допомог[аиу] на дит|соцвиплат|соціальн\S* виплат|child benefit|child allowance|social benefit|\bZUS\b|podat|податк|\btax)/i;
 
 const PL_WORDS = /\b(ile|czy|jak|jaki|jaka|jakie|jakim|jakich|gdzie|kiedy|ktory|ktora|ktore|dla|moge|musze|chce|kosztuje|koszt|cena|wniosek|wniosku|pobyt|pobytu|karta|karty|karte|praca|pracy|dokument|dokumenty|termin|terminie|urzad|wojewoda|wojewody|zezwolenie|zezwolenia|obywatelstwo|obywatelstwa|odwolanie|decyzja|decyzji|jest|sie|nie|tak|oraz|lub|przez|bez|mam|mnie|jestem|trzeba|zlozyc|skladac|dostac|wyjechac|mieszkac|potrzebuje)\b/i;
 
@@ -545,20 +557,25 @@ export const askAssistant = createServerFn({ method: "POST" })
       { model: "qwen/qwen3.8-27b", withSearch: false },
       { model: "openai/gpt-oss-20b", withSearch: false },
     ];
-    // Every request is offered search first; the SEARCH section of the prompt decides when the
-    // model must use it. Search used to be offered only when the knowledge base matched
-    // nothing or the question had a date word in it. Measured on 2026-10-19 with 12 real
-    // questions: search ran for 2. Topic selection almost always returns something — for
-    // "800+ for a child with a residence card" it returned three unrelated topics — so the
-    // gate stayed shut exactly where the base has no answer, and the user got "I cannot
-    // confirm, check gov.pl" for waiting times, document lists and benefits, or an answer
-    // from memory. The quota allows it: the site had 27 visitors in the 30 days before.
-    // The answering call's token count rides in the trace, so the cost is measured, not assumed.
-    // Only the 120b model searches. gpt-oss-20b with search was tried as a second searching
-    // model the same day and removed within the hour: it took facts from unofficial pages
-    // (a blog's "6-12 months" for Warsaw), got 800+ wrong (an income test, ePUAP, a 30-45
-    // day deadline — none of it true), garbled Ukrainian, and used up to 57,000 tokens
-    // per answer. A wrong answer is worse than "cannot confirm".
+    // Search runs only where the knowledge base cannot answer: no topic matched, the
+    // question is about dates or announcements, about required documents, or about
+    // benefits and taxes, which the base does not cover. Everything else is answered from
+    // the base alone.
+    //
+    // Measured on production, 19-20 Oct 2026. Search on every question fixed the gaps
+    // (800+, document lists) but damaged answers the base already had right: a refused
+    // residence card got a made-up "340 zł appeal fee", a Warsaw waiting-time question
+    // got the card-printing time of a different announcement, advice the base contradicts
+    // and a phone number. The match score cannot tell the two apart: "800+ for a child"
+    // scored 26 on an unrelated topic, above many correct matches (14-19).
+    // gpt-oss-20b with search was removed the same day: it took facts from unofficial
+    // pages, got 800+ wrong and used up to 57,000 tokens per answer. Searched answers with
+    // gpt-oss-120b cost 5,000-43,000 tokens; the count rides in the trace.
+    const potrzebaSzukania =
+      wybor.wpisy.length === 0 ||
+      TIME_SENSITIVE.test(lastUser) ||
+      DOCS_LIST_QUESTION.test(lastUser) ||
+      OUTSIDE_BASE_QUESTION.test(lastUser);
 
     // Diagnostic trace: what each model actually did on this request. It is attached to the
     // thrown error, so a failure can be read off the response instead of being guessed at.
@@ -566,6 +583,7 @@ export const askAssistant = createServerFn({ method: "POST" })
     const short = (model: string) => model.split("/").pop() ?? model;
 
     const candidates = ALL_CANDIDATES.filter((c) => {
+      if (c.withSearch && !potrzebaSzukania) return false;
       if (isCooling(c.model)) {
         trace.push(`${short(c.model)}:cooldown`);
         return false;

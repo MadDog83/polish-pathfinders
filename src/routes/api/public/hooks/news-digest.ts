@@ -97,6 +97,7 @@ const GLOSSARY: [pl: string, uk: string, en: string][] = [
   ],
   ["Sobota Informacyjna", "Інформаційна субота", "Information Saturday"],
   ["zaświadczenie", "довідка", "certificate"],
+  ["ul. Marszałkowska 3/5", "вул. Маршалковська 3/5", "3/5 Marszałkowska Street"],
 ];
 
 type Item = { title: string; url: string; date: string | null; intro: string };

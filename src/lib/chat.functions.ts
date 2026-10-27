@@ -523,8 +523,19 @@ export const askAssistant = createServerFn({ method: "POST" })
     // Fetched once per request, before the prompt is built, so buildSystemPrompt stays
     // synchronous and the retry loop below does not have to await anything.
     const indeks = await getLegalIndex();
+    // A follow-up like "a jak, przez wojewodę?" matches no topic on its own (27 October:
+    // the bot then answered from the conversation and gave 1669 zł, the presidential fee,
+    // instead of 1000 zł for recognition by the voivode). Only when the question alone
+    // selects nothing, the previous user question is added to give it its subject.
+    const prevUser = history.filter((m) => m.role === "user").slice(-2, -1)[0]?.content ?? "";
+    const wybierzZKontekstem = (ix: NonNullable<typeof indeks>) => {
+      const sam = selectLegalSections(ix, lastUser);
+      return sam.wpisy.length || !prevUser
+        ? sam
+        : selectLegalSections(ix, `${prevUser}\n${lastUser}`);
+    };
     const wybor = indeks
-      ? selectLegalSections(indeks, lastUser)
+      ? wybierzZKontekstem(indeks)
       : {
           tekst: "",
           wpisy: [] as { artykuly: string[]; artykuly_zakazane: string[]; ustawa: string | null }[],
